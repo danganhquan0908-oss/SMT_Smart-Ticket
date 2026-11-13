@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using SmartTicket.Infrastructure.Bookings;
 using StackExchange.Redis;
@@ -40,8 +41,9 @@ public sealed class RedisSeatLockIntegrationTests
 
             var configuration = new ConfigurationBuilder().Build();
             var logger = NullLogger<DistributedSeatLockManager>.Instance;
-            var firstManager = new DistributedSeatLockManager(configuration, logger, firstConnection);
-            var secondManager = new DistributedSeatLockManager(configuration, logger, secondConnection);
+            var environment = new TestHostEnvironment(Environments.Production);
+            var firstManager = new DistributedSeatLockManager(configuration, logger, environment, firstConnection);
+            var secondManager = new DistributedSeatLockManager(configuration, logger, environment, secondConnection);
             var tripId = Guid.NewGuid();
 
             var firstLock = await firstManager.TryAcquireLocksAsync(

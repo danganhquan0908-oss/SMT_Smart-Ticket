@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SmartTicket.Application.Bookings;
 using StackExchange.Redis;
@@ -10,14 +11,18 @@ public sealed class DistributedSeatLockManager : ISeatLockManager
 {
     private readonly ILogger<DistributedSeatLockManager> _logger;
     private readonly IConnectionMultiplexer? _redis;
-    private readonly bool _redisRequired;
+    private readonly bool _allowInMemoryFallback;
     private static readonly ConcurrentDictionary<string, (string Token, DateTime ExpiresAtUtc)> InMemoryLocks = new(StringComparer.OrdinalIgnoreCase);
 
-    public DistributedSeatLockManager(IConfiguration configuration, ILogger<DistributedSeatLockManager> logger, IConnectionMultiplexer? redis = null)
+    public DistributedSeatLockManager(
+        IConfiguration configuration,
+        ILogger<DistributedSeatLockManager> logger,
+        IHostEnvironment environment,
+        IConnectionMultiplexer? redis = null)
     {
         _logger = logger;
+        _allowInMemoryFallback = environment.IsDevelopment() && configuration.GetValue<bool>("SeatLocks:AllowInMemoryFallback");
         var redisConn = configuration.GetConnectionString("Redis");
-        _redisRequired = redis is not null || !string.IsNullOrWhiteSpace(redisConn);
         if (redis is not null)
         {
             _redis = redis;
@@ -32,7 +37,9 @@ public sealed class DistributedSeatLockManager : ISeatLockManager
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Không thể kết nối Redis; khóa ghế sẽ từ chối yêu cầu cho đến khi Redis khả dụng.");
+                    _logger.LogWarning(ex, _allowInMemoryFallback
+                        ? "Không thể kết nối Redis; Development được phép dùng khóa cục bộ trong tiến trình này."
+                        : "Không thể kết nối Redis; khóa ghế sẽ từ chối yêu cầu cho đến khi Redis khả dụng.");
                 }
             }
         }
@@ -49,12 +56,13 @@ public sealed class DistributedSeatLockManager : ISeatLockManager
             return await TryAcquireRedisLocksAsync(tripId, sortedCodes, lockToken, duration, ct);
         }
 
-        if (_redisRequired)
+        if (!_allowInMemoryFallback)
         {
             _logger.LogWarning("Redis được cấu hình nhưng hiện không khả dụng; từ chối khóa ghế để tránh giữ chỗ trùng giữa các instance.");
             return null;
         }
 
+        _logger.LogWarning("Redis không khả dụng; đang dùng khóa trong bộ nhớ cục bộ cho Development.");
         return TryAcquireInMemoryLocks(tripId, sortedCodes, lockToken, duration);
     }
 
