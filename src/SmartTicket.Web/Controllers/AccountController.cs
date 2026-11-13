@@ -1,5 +1,9 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using QRCoder;
+using SmartTicket.Application.Account;
 using SmartTicket.Infrastructure.Persistence;
 using SmartTicket.Web.Models;
 
@@ -9,17 +13,23 @@ namespace SmartTicket.Web.Controllers;
 public sealed class AccountController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
-    RoleManager<IdentityRole<Guid>> roleManager) : Controller
+    RoleManager<IdentityRole<Guid>> roleManager,
+    ICustomerAccountService customerAccount) : Controller
 {
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
 
     [HttpGet("register")]
-    public IActionResult Register() => View(new PassengerRegistrationViewModel());
+    public IActionResult Register(string? returnUrl = null)
+    {
+        ViewBag.ReturnUrl = returnUrl;
+        return View(new PassengerRegistrationViewModel());
+    }
 
     [HttpPost("register"), ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(PassengerRegistrationViewModel model)
+    public async Task<IActionResult> Register(PassengerRegistrationViewModel model, string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
         if (!ModelState.IsValid) return View(model);
 
         var email = model.Email.Trim();
@@ -46,6 +56,7 @@ public sealed class AccountController(
             Id = Guid.NewGuid(),
             UserName = email,
             Email = email,
+            FullName = model.FullName.Trim(),
             PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim(),
             IsActive = true
         };
@@ -68,6 +79,8 @@ public sealed class AccountController(
 
         await signInManager.SignInAsync(user, isPersistent: false);
         TempData["Success"] = "Tạo tài khoản hành khách thành công.";
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
         return RedirectToAction("Index", "Home");
     }
 
@@ -95,6 +108,8 @@ public sealed class AccountController(
                 if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl) && model.ReturnUrl.StartsWith("/station", StringComparison.OrdinalIgnoreCase)) return LocalRedirect(model.ReturnUrl);
                 return RedirectToAction("Index", "StationPortal");
             }
+            if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                return LocalRedirect(model.ReturnUrl);
             if (IsAdminReturnUrl(model.ReturnUrl)) return LocalRedirect(model.ReturnUrl!);
             return RedirectToAction("Index", "Home");
         }
@@ -142,6 +157,117 @@ public sealed class AccountController(
     {
         await signInManager.SignOutAsync();
         return RedirectToAction("Index", "Home");
+    }
+
+    [HttpGet("profile"), Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        var model = new CustomerProfileViewModel
+        {
+            FullName = user.FullName ?? user.UserName ?? "",
+            PhoneNumber = user.PhoneNumber,
+            Email = user.Email ?? ""
+        };
+        return View(model);
+    }
+
+    [HttpPost("profile"), Authorize, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(CustomerProfileViewModel model)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        model.Email = user.Email ?? "";
+        if (!ModelState.IsValid) return View(model);
+
+        user.FullName = model.FullName.Trim();
+        user.PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim();
+
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        TempData["ProfileSuccess"] = "Cập nhật thông tin cá nhân thành công.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost("change-password"), Authorize, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Challenge();
+
+        if (!ModelState.IsValid)
+        {
+            TempData["PasswordError"] = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (!result.Succeeded)
+        {
+            TempData["PasswordError"] = string.Join("; ", result.Errors.Select(e => e.Description));
+            return RedirectToAction(nameof(Profile));
+        }
+
+        await signInManager.RefreshSignInAsync(user);
+        TempData["PasswordSuccess"] = "Đổi mật khẩu thành công.";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpGet("tickets"), Authorize]
+    public async Task<IActionResult> Tickets(CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Challenge();
+
+        var bookings = await customerAccount.GetBookingsAsync(userId, ct);
+        var now = DateTime.UtcNow;
+
+        var upcoming = bookings.Where(b => b.Status == "Paid" && b.DepartureTimeUtc > now).ToList();
+        var pending = bookings.Where(b => b.Status == "Pending" && b.ExpiresAtUtc > now).ToList();
+        var history = bookings.Where(b => !(b.Status == "Paid" && b.DepartureTimeUtc > now) && !(b.Status == "Pending" && b.ExpiresAtUtc > now)).ToList();
+
+        return View(new CustomerTicketsViewModel
+        {
+            Upcoming = upcoming,
+            Pending = pending,
+            History = history
+        });
+    }
+
+    [HttpGet("tickets/{bookingId:guid}"), Authorize]
+    public async Task<IActionResult> TicketDetails(Guid bookingId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Challenge();
+
+        var booking = await customerAccount.GetBookingDetailsAsync(userId, bookingId, ct);
+        if (booking is null) return NotFound();
+
+        ViewBag.TicketQr = booking.Tickets.ToDictionary(
+            x => x.TicketNumber,
+            x =>
+            {
+                using var generator = new QRCodeGenerator();
+                using var data = generator.CreateQrCode(x.CheckInJwt, QRCodeGenerator.ECCLevel.Q);
+                return Convert.ToBase64String(new PngByteQRCode(data).GetGraphic(8));
+            });
+
+        return View(booking);
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(idStr, out var id) ? id : Guid.Empty;
     }
 
     private bool IsOperatorReturnUrl(string? value) => !string.IsNullOrWhiteSpace(value) && Url.IsLocalUrl(value) && value.StartsWith("/operator", StringComparison.OrdinalIgnoreCase);

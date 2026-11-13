@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartTicket.Application.Bookings;
@@ -11,7 +12,8 @@ public sealed class TripsController(
     IBookingService bookings, 
     SmartTicketDbContext db, 
     IConfiguration configuration, 
-    IHostEnvironment environment) : Controller
+    IHostEnvironment environment,
+    UserManager<ApplicationUser> userManager) : Controller
 {
     [HttpGet("{tripId:guid}/seats")]
     public async Task<IActionResult> Seats(Guid tripId, CancellationToken ct)
@@ -62,6 +64,17 @@ public sealed class TripsController(
         ViewBag.AccountNumber = configuration["Payments:AccountNumber"] ?? "";
         ViewBag.AccountName = configuration["Payments:AccountName"] ?? "";
         ViewBag.IsDev = environment.IsDevelopment();
+
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user is not null)
+            {
+                ViewBag.CustomerName = user.FullName ?? user.UserName ?? "";
+                ViewBag.CustomerPhone = user.PhoneNumber ?? "";
+                ViewBag.CustomerEmail = user.Email ?? "";
+            }
+        }
 
         return View("~/Views/Trips/Seats.cshtml");
     }

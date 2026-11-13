@@ -90,6 +90,9 @@ public sealed class SmartTicketDbContext(DbContextOptions<SmartTicketDbContext> 
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.LookupTokenHash).HasMaxLength(64).IsRequired();
             entity.HasIndex(x => x.LookupTokenHash).IsUnique();
+            entity.Property(x => x.CustomerUserId);
+            entity.HasIndex(x => new { x.CustomerUserId, x.CreatedAtUtc });
+            entity.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.CustomerUserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasMany(x => x.Seats).WithOne(x => x.Booking).HasForeignKey(x => x.BookingId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.Trip).WithMany().HasForeignKey(x => x.TripId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -102,7 +105,11 @@ public sealed class SmartTicketDbContext(DbContextOptions<SmartTicketDbContext> 
             entity.HasOne<Seat>().WithMany().HasForeignKey(x => x.SeatId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Entity<ApplicationUser>().Property(x => x.IsActive).HasDefaultValue(false);
+        builder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(x => x.FullName).HasMaxLength(160);
+            entity.Property(x => x.IsActive).HasDefaultValue(false);
+        });
         builder.Entity<BusOperator>(entity =>
         {
             entity.ToTable("BusOperators");

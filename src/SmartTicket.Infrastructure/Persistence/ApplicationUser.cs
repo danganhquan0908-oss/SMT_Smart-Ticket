@@ -4,6 +4,7 @@ namespace SmartTicket.Infrastructure.Persistence;
 
 public sealed class ApplicationUser : IdentityUser<Guid>
 {
+    public string? FullName { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }

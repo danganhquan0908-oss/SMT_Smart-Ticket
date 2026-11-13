@@ -28,10 +28,11 @@
                     <button type="button" class="button button-secondary demo-chip-btn" onclick="document.getElementById('Email').value='phuongtrang@smartticket.vn'; document.getElementById('Password').value='SmartTicket@2026';">🚌 Phương Trang (FUTA)</button>
                     <button type="button" class="button button-secondary demo-chip-btn" onclick="document.getElementById('Email').value='hoanglong@smartticket.vn'; document.getElementById('Password').value='SmartTicket@2026';">🚍 Hoàng Long</button>
                     <button type="button" class="button button-secondary demo-chip-btn" onclick="document.getElementById('Email').value='benxe@smartticket.vn'; document.getElementById('Password').value='SmartTicket@2026';">🏣 Bến xe (Kiểm soát)</button>
+                    <button type="button" class="button button-secondary demo-chip-btn" onclick="document.getElementById('Email').value='khachhang@smartticket.vn'; document.getElementById('Password').value='SmartTicket@2026';">👤 Khách hàng (Demo)</button>
                 </div>
             </div>
         </form>
-        <p class="register-note"><span data-i18n="login_new_user">Bạn là hành khách mới?</span> <a asp-controller="Account" asp-action="Register" data-i18n="login_create_acc">Tạo tài khoản</a></p>
+        <p class="register-note"><span data-i18n="login_new_user">Bạn là hành khách mới?</span> <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl" data-i18n="login_create_acc">Tạo tài khoản</a></p>
         <p class="register-note"><span data-i18n="login_partner_q">Bạn là nhà xe?</span> <a asp-controller="OperatorRegistration" asp-action="Register" data-i18n="login_partner_reg">Gửi hồ sơ đăng ký</a></p>
     </div>
 </section>

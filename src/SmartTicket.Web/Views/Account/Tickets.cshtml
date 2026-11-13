@@ -1,0 +1,383 @@
+@model SmartTicket.Web.Models.CustomerTicketsViewModel
+@{
+    ViewData["Title"] = "Vé của tôi - Smart Ticket";
+}
+
+<div class="tickets-page-shell">
+    <div class="tickets-hero-banner">
+        <div>
+            <span class="eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
+            <h1>Vé xe của tôi</h1>
+            <p class="muted">Toàn bộ vé xe điện tử và lịch sử đặt chỗ của bạn được lưu trữ an toàn tại đây.</p>
+        </div>
+        <div class="tickets-hero-actions">
+            <a class="button button-outline" asp-controller="Account" asp-action="Profile">
+                👤 Cập nhật hồ sơ
+            </a>
+            <a class="button button-primary" asp-controller="Home" asp-action="Index">
+                🔍 Tìm chuyến xe mới →
+            </a>
+        </div>
+    </div>
+
+    <!-- TABS ĐIỀU HƯỚNG TRẠNG THÁI VÉ -->
+    <div class="tickets-tabs-nav" role="tablist">
+        <button type="button" class="tab-pill active" onclick="switchTab('upcoming', this)">
+            🚌 Sắp khởi hành <span class="tab-badge">@Model.Upcoming.Count</span>
+        </button>
+        <button type="button" class="tab-pill" onclick="switchTab('pending', this)">
+            ⏱️ Chờ thanh toán <span class="tab-badge badge-amber">@Model.Pending.Count</span>
+        </button>
+        <button type="button" class="tab-pill" onclick="switchTab('history', this)">
+            📜 Lịch sử chuyến đi <span class="tab-badge badge-muted">@Model.History.Count</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: SẮP KHỞI HÀNH -->
+    <div id="tab-upcoming" class="tab-pane active">
+        @if (Model.Upcoming.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">🎟️</div>
+                <h3>Bạn chưa có vé xe nào sắp khởi hành</h3>
+                <p class="muted">Hãy đặt chuyến xe mới để trải nghiệm dịch vụ xe khách chất lượng cao liên tỉnh.</p>
+                <a class="button button-primary mt-2" asp-controller="Home" asp-action="Index">Đặt vé ngay bây giờ</a>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.Upcoming)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    <div class="booking-ticket-card">
+                        <div class="card-top-row">
+                            <span class="badge-status-paid">✓ ĐÃ THANH TOÁN</span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <strong class="m-val text-gold">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Nhà xe:</span>
+                                <strong class="m-val">@b.OperatorName</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế đã đặt:</span>
+                                <strong class="m-val seat-chips">@string.Join(", ", b.SeatCodes)</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền:</span>
+                                <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
+                            </div>
+                        </div>
+                        <div class="card-action-bar">
+                            <a class="button button-primary button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                                📱 Xem vé & Mã QR lên xe
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 2: CHỜ THANH TOÁN -->
+    <div id="tab-pending" class="tab-pane" style="display: none;">
+        @if (Model.Pending.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">✓</div>
+                <h3>Không có đơn đặt chỗ nào đang chờ thanh toán</h3>
+                <p class="muted">Tất cả các đơn đặt vé của bạn đều đã được hoàn tất hoặc giải phóng ghế an toàn.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.Pending)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    <div class="booking-ticket-card card-pending">
+                        <div class="card-top-row">
+                            <span class="badge-status-pending">⏱️ ĐANG GIỮ CHỖ (7 PHÚT)</span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <strong class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế giữ chỗ:</span>
+                                <strong class="m-val">@string.Join(", ", b.SeatCodes)</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền cần CK:</span>
+                                <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
+                            </div>
+                        </div>
+                        <div class="card-action-bar">
+                            <span class="text-muted small">Quét mã QR thanh toán bằng app ngân hàng với nội dung: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 3: LỊCH SỬ CHUYẾN ĐI -->
+    <div id="tab-history" class="tab-pane" style="display: none;">
+        @if (Model.History.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">📜</div>
+                <h3>Chưa có lịch sử chuyến đi cũ</h3>
+                <p class="muted">Các chuyến xe đã hoàn thành hoặc hết hạn sẽ được lưu trữ tại đây.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.History)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    var isPaid = b.Status == "Paid";
+                    <div class="booking-ticket-card card-history">
+                        <div class="card-top-row">
+                            <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")">
+                                @(isPaid ? "✓ ĐÃ HOÀN THÀNH" : "✕ ĐÃ HẾT HẠN")
+                            </span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <span class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Nhà xe:</span>
+                                <span class="m-val">@b.OperatorName</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế:</span>
+                                <span class="m-val">@string.Join(", ", b.SeatCodes)</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền:</span>
+                                <span class="m-val">@b.TotalAmount.ToString("N0") ₫</span>
+                            </div>
+                        </div>
+                        @if (isPaid && b.Tickets.Count > 0)
+                        {
+                            <div class="card-action-bar">
+                                <a class="button button-outline button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                                    Xem lại vé điện tử & In PDF
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tickets-tabs-nav .tab-pill').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+    
+    btn.classList.add('active');
+    const target = document.getElementById('tab-' + tabId);
+    if (target) target.style.display = 'block';
+}
+</script>
+
+<style>
+.tickets-page-shell {
+    max-width: 1040px;
+    margin: 32px auto 80px;
+    padding: 0 16px;
+}
+.tickets-hero-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: radial-gradient(circle at 85% 15%, rgba(229, 169, 80, 0.22), transparent 45%),
+                linear-gradient(135deg, #181109 0%, #24170d 55%, #382414 100%);
+    border: 1px solid rgba(229, 169, 80, 0.35);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    color: #fff;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+.tickets-hero-banner h1 {
+    font-size: 26px;
+    font-weight: 850;
+    margin: 6px 0 6px;
+    color: #fff;
+}
+.tickets-hero-actions {
+    display: flex;
+    gap: 10px;
+}
+.tickets-tabs-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+    padding-bottom: 12px;
+}
+.tab-pill {
+    background: var(--soft, #1e1710);
+    border: 1px solid var(--line, rgba(255, 255, 255, 0.15));
+    color: var(--ink, #fff);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tab-pill.active {
+    background: var(--gold, #e5a950);
+    color: #1a1005;
+    border-color: var(--gold, #e5a950);
+    box-shadow: 0 4px 15px rgba(229, 169, 80, 0.35);
+}
+.tab-badge {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+}
+.tab-pill.active .tab-badge {
+    background: rgba(0, 0, 0, 0.15);
+    color: #1a1005;
+}
+.badge-amber { background: rgba(245, 158, 11, 0.25); color: #fbbf24; }
+.badge-muted { background: rgba(255, 255, 255, 0.1); color: #9ca3af; }
+.empty-bookings-box {
+    text-align: center;
+    background: var(--glass-bg-solid, #18120c);
+    border: 1px dashed var(--line, rgba(255, 255, 255, 0.15));
+    border-radius: 18px;
+    padding: 50px 20px;
+    color: var(--ink, #fff);
+}
+.empty-icon { font-size: 42px; margin-bottom: 12px; }
+.bookings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.booking-ticket-card {
+    background: var(--glass-bg-solid, #18120c);
+    border: 1px solid var(--pill-border, rgba(229, 169, 80, 0.25));
+    border-radius: 18px;
+    padding: 22px 26px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.booking-ticket-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.badge-status-paid {
+    background: rgba(16, 185, 129, 0.18);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.badge-status-pending {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.badge-status-history {
+    background: rgba(107, 114, 128, 0.18);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.35);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.badge-status-expired {
+    background: rgba(239, 68, 68, 0.18);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.booking-code-tag {
+    font-size: 12px;
+    color: var(--muted, #9ca3af);
+    font-family: monospace;
+}
+.card-route-title h3 {
+    font-size: 20px;
+    font-weight: 850;
+    color: var(--ink, #fff);
+    margin: 4px 0 14px;
+}
+.route-arrow { color: var(--gold, #e5a950); margin: 0 4px; }
+.card-meta-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+    border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+    margin-bottom: 16px;
+}
+.meta-item .m-label {
+    display: block;
+    font-size: 11.5px;
+    color: var(--muted, #9ca3af);
+    margin-bottom: 3px;
+}
+.meta-item .m-val {
+    font-size: 14px;
+    font-weight: 750;
+    color: var(--ink, #fff);
+}
+.seat-chips { color: var(--gold, #e5a950); }
+.text-gold { color: var(--gold, #e5a950) !important; }
+.text-crimson { color: #f87171 !important; }
+@@media (max-width: 800px) {
+    .tickets-hero-banner { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .card-meta-row { grid-template-columns: 1fr 1fr; }
+}
+</style>

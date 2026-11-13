@@ -21,10 +21,12 @@ public sealed class TripsController(
     [HttpGet("{tripId:guid}/seats"), AllowAnonymous]
     public async Task<IActionResult> Seats(Guid tripId, CancellationToken ct) => Ok(await bookings.GetSeatsAsync(tripId, ct));
 
-    [HttpPost("{tripId:guid}/holds"), AllowAnonymous]
+    [HttpPost("{tripId:guid}/holds"), Authorize]
     public async Task<IActionResult> Hold(Guid tripId, HoldSeatsRequest request, CancellationToken ct)
     {
-        var hold = await bookings.HoldSeatsAsync(tripId, request, ct);
+        var idStr = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        Guid? customerUserId = Guid.TryParse(idStr, out var id) ? id : null;
+        var hold = await bookings.HoldSeatsAsync(tripId, request with { CustomerUserId = customerUserId }, ct);
         await hub.Clients.Group(TripSeatsHub.Group(tripId)).SendAsync("SeatsChanged", new { hold.SeatCodes, status = "Holding", hold.ExpiresAtUtc }, ct);
 
         string? qrImage = null;

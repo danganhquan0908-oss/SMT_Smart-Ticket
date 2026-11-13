@@ -14,6 +14,8 @@ using SmartTicket.Infrastructure.Payments;
 using SmartTicket.Application.Payments;
 using SmartTicket.Application.Operations;
 using SmartTicket.Infrastructure.Operations;
+using SmartTicket.Application.Account;
+using SmartTicket.Infrastructure.Account;
 using SmartTicket.Web.Middleware;
 using StackExchange.Redis;
 
@@ -73,6 +75,7 @@ builder.Services.AddScoped<IActivationEmailSender, SmtpActivationEmailSender>();
 builder.Services.AddSingleton<ISeatLockManager, DistributedSeatLockManager>();
 builder.Services.AddScoped<IBookingService, EfBookingService>();
 builder.Services.AddScoped<IPaymentService, EfPaymentService>();
+builder.Services.AddScoped<ICustomerAccountService, EfCustomerAccountService>();
 builder.Services.AddScoped<IStationOperationsService, EfStationOperationsService>();
 builder.Services.AddHttpClient<ISettlementPayoutProvider, HttpSettlementPayoutProvider>();
 builder.Services.AddHostedService<SettlementWorker>();

@@ -80,6 +80,11 @@
                 else
                 {
                     <a asp-controller="Home" asp-action="Index" data-i18n="nav_home">Tìm chuyến</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a asp-controller="Account" asp-action="Tickets" data-i18n="nav_my_tickets">🎟️ Vé của tôi</a>
+                        <a asp-controller="Account" asp-action="Profile" data-i18n="nav_my_profile">👤 Hồ sơ</a>
+                    }
                     @if (User.IsInRole("SUPER_ADMIN"))
                     {
                         <a asp-controller="Stations" asp-action="Index" data-i18n="nav_stations_admin">Bến xe</a>
@@ -93,7 +98,9 @@
             <div class="account-area">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <span class="admin-label"><i></i> @User.Identity.Name</span>
+                    <a asp-controller="Account" asp-action="Profile" class="user-chip-link" title="Xem hồ sơ cá nhân">
+                        <span class="admin-label"><i></i> @User.Identity.Name</span>
+                    </a>
                     <form asp-controller="Account" asp-action="Logout" method="post">
                         <button class="logout-button" data-i18n="nav_logout">Đăng xuất</button>
                     </form>

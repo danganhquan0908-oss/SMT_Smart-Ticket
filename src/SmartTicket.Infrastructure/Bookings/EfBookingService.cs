@@ -98,7 +98,7 @@ public sealed class EfBookingService(
         {
             if (!seat.TryHold(Guid.Empty, now, HoldDuration)) throw new BookingConflictException($"Ghế {seat.SeatCode} vừa được người khác giữ hoặc đã bán.");
         }
-        var booking = new Booking(tripId, request.PassengerName, request.PassengerPhone, request.PassengerEmail, trip.TicketPrice * seats.Count);
+        var booking = new Booking(tripId, request.PassengerName, request.PassengerPhone, request.PassengerEmail, trip.TicketPrice * seats.Count, request.CustomerUserId);
         foreach (var seat in seats)
         {
             seat.ReleaseHold(Guid.Empty);

@@ -166,6 +166,9 @@ namespace SmartTicket.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CustomerUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -209,6 +212,8 @@ namespace SmartTicket.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("TripId");
+
+                    b.HasIndex("CustomerUserId", "CreatedAtUtc");
 
                     b.ToTable("Bookings", (string)null);
                 });
@@ -1045,6 +1050,10 @@ namespace SmartTicket.Infrastructure.Persistence.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("FullName")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1148,6 +1157,11 @@ namespace SmartTicket.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("SmartTicket.Domain.Entities.Booking", b =>
                 {
+                    b.HasOne("SmartTicket.Infrastructure.Persistence.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SmartTicket.Domain.Entities.Trip", "Trip")
                         .WithMany()
                         .HasForeignKey("TripId")

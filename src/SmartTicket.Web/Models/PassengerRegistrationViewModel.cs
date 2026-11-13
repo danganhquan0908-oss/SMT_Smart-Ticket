@@ -4,6 +4,11 @@ namespace SmartTicket.Web.Models;
 
 public sealed class PassengerRegistrationViewModel
 {
+    [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
+    [Display(Name = "Họ và tên hành khách")]
+    [StringLength(160, ErrorMessage = "Họ và tên không được vượt quá 160 ký tự.")]
+    public string FullName { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Vui lòng nhập email.")]
     [EmailAddress(ErrorMessage = "Email chưa đúng định dạng.")]
     [StringLength(254)]

@@ -31,12 +31,13 @@ internal static class DevelopmentDataSeeder
         var stationEmail = configuration["DemoData:StationEmail"] ?? "benxe@smartticket.vn";
         var stationPassword = configuration["DemoData:StationPassword"] ?? "SmartTicket@2026";
 
-        var operatorUser = await EnsureUserAsync(users, roles, operatorEmail, operatorPassword, "OPERATOR_OWNER");
-        var stationUser = await EnsureUserAsync(users, roles, stationEmail, stationPassword, "STATION_AGENT");
+        var operatorUser = await EnsureUserAsync(users, roles, operatorEmail, operatorPassword, "OPERATOR_OWNER", "Đại diện SMT Express", "0900000111");
+        var stationUser = await EnsureUserAsync(users, roles, stationEmail, stationPassword, "STATION_AGENT", "Kiểm soát Bến xe", "0900000222");
 
         // Đồng thời khởi tạo tài khoản dự phòng theo định dạng .local
-        var legacyOperatorUser = await EnsureUserAsync(users, roles, "demo.operator@smartticket.local", "SmartTicket!Operator2026", "OPERATOR_OWNER");
-        var legacyStationUser = await EnsureUserAsync(users, roles, "demo.station@smartticket.local", "SmartTicket!Station2026", "STATION_AGENT");
+        var legacyOperatorUser = await EnsureUserAsync(users, roles, "demo.operator@smartticket.local", "SmartTicket!Operator2026", "OPERATOR_OWNER", "SMT Express Local", "0900000112");
+        var legacyStationUser = await EnsureUserAsync(users, roles, "demo.station@smartticket.local", "SmartTicket!Station2026", "STATION_AGENT", "Bến xe Local", "0900000223");
+        var customerUser = await EnsureUserAsync(users, roles, "khachhang@smartticket.vn", "SmartTicket@2026", "CUSTOMER", "Đặng Anh Quân", "0345588495");
 
         var stations = new Dictionary<string, Station>(StringComparer.OrdinalIgnoreCase);
         foreach (var seed in StationSeeds)
@@ -356,7 +357,7 @@ internal static class DevelopmentDataSeeder
     }
 
     private static async Task<ApplicationUser> EnsureUserAsync(UserManager<ApplicationUser> users,
-        RoleManager<IdentityRole<Guid>> roles, string email, string password, string role)
+        RoleManager<IdentityRole<Guid>> roles, string email, string password, string role, string? fullName = null, string? phone = null)
     {
         if (!await roles.RoleExistsAsync(role))
         {
@@ -367,17 +368,19 @@ internal static class DevelopmentDataSeeder
         var user = await users.FindByEmailAsync(email);
         if (user is null)
         {
-            user = new ApplicationUser { Id = Guid.NewGuid(), UserName = email, Email = email, EmailConfirmed = true, IsActive = true };
+            user = new ApplicationUser { Id = Guid.NewGuid(), UserName = email, Email = email, FullName = fullName, PhoneNumber = phone, EmailConfirmed = true, IsActive = true };
             var create = await users.CreateAsync(user, password);
             if (!create.Succeeded) throw new InvalidOperationException($"Không tạo được tài khoản demo {email}: {string.Join("; ", create.Errors.Select(x => x.Description))}");
         }
         else
         {
             var isDirty = false;
-            if (!user.IsActive || !user.EmailConfirmed)
+            if (!user.IsActive || !user.EmailConfirmed || (fullName != null && user.FullName != fullName) || (phone != null && user.PhoneNumber != phone))
             {
                 user.IsActive = true;
                 user.EmailConfirmed = true;
+                if (fullName != null) user.FullName = fullName;
+                if (phone != null) user.PhoneNumber = phone;
                 isDirty = true;
             }
             if (isDirty)
