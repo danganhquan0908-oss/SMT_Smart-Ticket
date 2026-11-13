@@ -1,0 +1,59 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using QRCoder;
+using SmartTicket.Application.Bookings;
+using SmartTicket.Application.Payments;
+using SmartTicket.Web.Hubs;
+
+namespace SmartTicket.Web.Controllers.Api;
+
+[ApiController, Route("api/trips")]
+public sealed class TripsController(
+    IBookingService bookings, 
+    IPaymentService payments,
+    IHubContext<TripSeatsHub> hub) : ControllerBase
+{
+    [HttpGet("/api/search/trips"), AllowAnonymous]
+    public async Task<IActionResult> Search([FromQuery] Guid departureStationId, [FromQuery] Guid arrivalStationId, [FromQuery] DateOnly travelDate, CancellationToken ct) =>
+        Ok(await bookings.SearchAsync(new TripSearchQuery(departureStationId, arrivalStationId, travelDate), ct));
+
+    [HttpGet("{tripId:guid}/seats"), AllowAnonymous]
+    public async Task<IActionResult> Seats(Guid tripId, CancellationToken ct) => Ok(await bookings.GetSeatsAsync(tripId, ct));
+
+    [HttpPost("{tripId:guid}/holds"), AllowAnonymous]
+    public async Task<IActionResult> Hold(Guid tripId, HoldSeatsRequest request, CancellationToken ct)
+    {
+        var hold = await bookings.HoldSeatsAsync(tripId, request, ct);
+        await hub.Clients.Group(TripSeatsHub.Group(tripId)).SendAsync("SeatsChanged", new { hold.SeatCodes, status = "Holding", hold.ExpiresAtUtc }, ct);
+
+        string? qrImage = null;
+        string? qrPayload = null;
+        try
+        {
+            var checkout = await payments.CreateCheckoutAsync(hold.LookupToken, ct);
+            qrPayload = checkout.QrPayload;
+            using var generator = new QRCodeGenerator();
+            using var data = generator.CreateQrCode(checkout.QrPayload, QRCodeGenerator.ECCLevel.Q);
+            var png = new PngByteQRCode(data).GetGraphic(12);
+            qrImage = "data:image/png;base64," + Convert.ToBase64String(png);
+        }
+        catch
+        {
+            // Dự phòng nếu lỗi sinh QR thì client dùng fallback
+        }
+
+        return Created($"/booking/{hold.BookingCode}", new
+        {
+            hold.BookingId,
+            hold.BookingCode,
+            hold.ExpiresAtUtc,
+            hold.TotalAmount,
+            hold.SeatCodes,
+            hold.LookupToken,
+            qrPayload,
+            qrImage,
+            checkoutUrl = $"/payments/checkout?token={Uri.EscapeDataString(hold.LookupToken)}"
+        });
+    }
+}

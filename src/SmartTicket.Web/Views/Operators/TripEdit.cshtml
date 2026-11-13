@@ -1,0 +1,161 @@
+@model SmartTicket.Web.Models.OperatorTripForm
+@{
+    var isEdit = ViewData["TripId"] is not null;
+    ViewData["Title"] = isEdit ? "Cập nhật chuyến xe" : "Tạo chuyến xe mới";
+    var soldTickets = (int?)ViewBag.SoldTicketCount ?? 0;
+}
+
+<div class="trip-edit-container">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">ĐIỀU HÀNH LỊCH CHẠY</p>
+            <h1>@ViewData["Title"]</h1>
+            <p>Phân bổ tuyến đường, phương tiện, tài xế và thiết lập giá vé niêm yết công khai.</p>
+        </div>
+        <a class="button button-outline" asp-action="Trips">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Quay lại danh sách
+        </a>
+    </div>
+
+    @if (isEdit && soldTickets > 0)
+    {
+        <div class="notice notice-error" style="display: flex; align-items: center; gap: 10px;">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <span><strong>Chuyến đã phát sinh @soldTickets vé đã bán.</strong> Không thể thay đổi giờ khởi hành hoặc giờ đến để bảo đảm quyền lợi hành khách.</span>
+        </div>
+    }
+
+    <div class="form-card">
+        <form method="post" asp-action="@(isEdit ? "EditTrip" : "CreateTrip")" asp-route-id="@ViewData["TripId"]">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="form-grid">
+                <!-- TUYẾN ĐƯỜNG -->
+                <div class="field field-full">
+                    <label>Tuyến đường khai thác <span class="required">*</span></label>
+                    <select asp-for="RouteId" asp-items="ViewBag.Routes" class="form-select" required>
+                        <option value="">-- Chọn tuyến đường (Bến đi → Bến đến) --</option>
+                    </select>
+                    <span asp-validation-for="RouteId" class="field-error"></span>
+                </div>
+
+                <!-- PHƯƠNG TIỆN -->
+                <div class="field">
+                    <label>Phương tiện vận tải <span class="required">*</span></label>
+                    <select asp-for="VehicleId" asp-items="ViewBag.Vehicles" class="form-select" required>
+                        <option value="">-- Chọn xe & sơ đồ ghế --</option>
+                    </select>
+                    <span asp-validation-for="VehicleId" class="field-error"></span>
+                    <small class="field-help">Xe phải gắn mẫu sơ đồ ghế còn hoạt động</small>
+                </div>
+
+                <!-- TÀI XẾ -->
+                <div class="field">
+                    <label>Tài xế phụ trách <span class="required">*</span></label>
+                    <select asp-for="DriverId" asp-items="ViewBag.Drivers" class="form-select" required>
+                        <option value="">-- Chọn tài xế chính --</option>
+                    </select>
+                    <span asp-validation-for="DriverId" class="field-error"></span>
+                    <small class="field-help">Tài xế phải có bằng lái phù hợp và hồ sơ hợp lệ</small>
+                </div>
+
+                <!-- GIỜ KHỞI HÀNH -->
+                <div class="field">
+                    <label>Thời gian khởi hành (Giờ Việt Nam) <span class="required">*</span></label>
+                    <input asp-for="DepartureTime" type="datetime-local" class="form-input" value="@Model.DepartureTime.ToString("yyyy-MM-ddTHH:mm")" required />
+                    <span asp-validation-for="DepartureTime" class="field-error"></span>
+                </div>
+
+                <!-- GIỜ ĐẾN -->
+                <div class="field">
+                    <label>Thời gian đến dự kiến <span class="required">*</span></label>
+                    <input asp-for="ArrivalTime" type="datetime-local" class="form-input" value="@Model.ArrivalTime.ToString("yyyy-MM-ddTHH:mm")" required />
+                    <span asp-validation-for="ArrivalTime" class="field-error"></span>
+                </div>
+
+                <!-- GIÁ VÉ NIÊM YẾT -->
+                @if (!isEdit)
+                {
+                    <div class="field field-full">
+                        <label>Giá vé niêm yết (VNĐ / ghế) <span class="required">*</span></label>
+                        <div class="input-currency-wrapper">
+                            <input asp-for="TicketPrice" type="number" min="10000" step="1000" class="form-input" placeholder="Ví dụ: 320000" required />
+                            <span class="currency-tag">VNĐ</span>
+                        </div>
+                        <span asp-validation-for="TicketPrice" class="field-error"></span>
+                        <small class="field-help">Giá vé sẽ được công khai minh bạch trên hệ thống để hành khách so sánh và đặt chỗ.</small>
+                    </div>
+                }
+                else
+                {
+                    <input asp-for="TicketPrice" type="hidden" />
+                    <div class="field field-full">
+                        <div class="price-notice-box">
+                            <span>💡 Để điều chỉnh giá vé của chuyến xe này, vui lòng sử dụng tính năng <strong>Cập nhật giá</strong> trực tiếp tại danh sách chuyến xe (hệ thống sẽ tự động ghi nhật ký Audit Log).</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="form-footer">
+                <a asp-action="Trips" class="button button-outline">Hủy bỏ</a>
+                <button type="submit" class="button button-primary" style="padding-inline: 24px;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                    @(isEdit ? "Lưu thay đổi lịch chạy" : "Tạo chuyến xe mới")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+  .trip-edit-container {
+    max-width: 860px;
+    margin: 20px auto 50px;
+  }
+  .form-select {
+    height: 44px;
+    border: 1.5px solid #ded8e2;
+    border-radius: 9px;
+    padding: 0 12px;
+    font-size: 13.5px;
+    outline: none;
+    background: #fff;
+    width: 100%;
+    color: var(--ink, #1a162b);
+    transition: all 0.2s;
+  }
+  .form-select:focus {
+    border-color: var(--plum, #5e17eb);
+    box-shadow: 0 0 0 3px rgba(94, 23, 235, 0.1);
+  }
+  .field-help {
+    font-size: 11.5px;
+    color: var(--muted, #777486);
+    margin-top: 3px;
+  }
+  .input-currency-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-currency-wrapper input {
+    padding-right: 55px;
+  }
+  .currency-tag {
+    position: absolute;
+    right: 14px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--crimson, #c81d4a);
+  }
+  .price-notice-box {
+    padding: 12px 16px;
+    background: #fdfaf7;
+    border: 1px solid #eddcd0;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: #6a4928;
+  }
+</style>

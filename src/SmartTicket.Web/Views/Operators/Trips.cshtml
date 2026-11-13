@@ -1,0 +1,303 @@
+@model IReadOnlyList<SmartTicket.Application.Operators.OperatorTripDto>
+@{
+    ViewData["Title"] = "Quản lý Chuyến xe - Smart Ticket";
+}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">ĐIỀU HÀNH LỊCH CHẠY</p>
+        <h1>Chuyến xe & Giá vé</h1>
+        <p>Phân xe, tài xế, quản lý giờ chạy và toàn quyền điều chỉnh giá vé niêm yết của nhà xe.</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-outline" asp-action="Index">← Bảng điều hành</a>
+        <a class="button button-primary" asp-action="CreateTrip">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Tạo chuyến xe mới
+        </a>
+    </div>
+</div>
+
+@await Html.PartialAsync("_Feedback")
+
+<div class="tenant-isolation-banner" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem; border-radius: 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+        <span style="font-size: 1.75rem;">🏢</span>
+        <div>
+            <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">
+                Nhà xe đang điều hành: <span style="color: var(--accent-gold, #D4AF37);">@(ViewBag.OperatorName ?? "SMT Express")</span>
+                @if (!string.IsNullOrEmpty(ViewBag.OperatorTaxCode as string))
+                {
+                    <span style="font-size: 0.85rem; font-weight: normal; opacity: 0.85;">(MST: @ViewBag.OperatorTaxCode)</span>
+                }
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted, #94a3b8); margin-top: 0.2rem;">
+                🛡️ <strong>Chính sách cách ly đa nhà xe (Multi-Tenant Isolation):</strong> Bạn chỉ có quyền xem, lên lịch và điều chỉnh giá vé của các chuyến xe thuộc thẩm quyền của <strong>@(ViewBag.OperatorName ?? "nhà xe này")</strong>. Hệ thống tự động ngăn chặn và từ chối mọi quyền can thiệp vào chuyến của các nhà xe đối tác khác.
+            </div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600;">
+            ✓ Đã xác thực phân quyền Nhà xe
+        </span>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-toolbar">
+        <div>
+            <strong>Danh sách các chuyến xe đang khai thác</strong>
+            <span>(@Model.Count chuyến xe)</span>
+        </div>
+        <div class="status-legend-chips">
+            <span class="status status-active">Đã lên lịch</span>
+            <span class="status status-running">Đang chạy</span>
+            <span class="status status-inactive">Hoàn tất</span>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tuyến đường</th>
+                    <th>Phương tiện & Tài xế</th>
+                    <th>Thời gian khởi hành</th>
+                    <th>Giá vé niêm yết & Số vé</th>
+                    <th>Trạng thái</th>
+                    <th class="actions-col">Điều chỉnh giá vé & Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var trip in Model)
+                {
+                    var departLocal = trip.DepartureTimeUtc.AddHours(7); // Giờ Việt Nam chuẩn xác và an toàn trên mọi hệ điều hành
+                    <tr>
+                        <td class="primary-cell">
+                            <div class="route-title-cell">@trip.RouteName</div>
+                        </td>
+                        <td>
+                            <strong class="plate-badge">@trip.PlateNumber</strong>
+                            <small class="driver-name-sub">Tài xế: @trip.DriverName</small>
+                        </td>
+                        <td>
+                            <div class="time-bold">@departLocal.ToString("HH:mm")</div>
+                            <small class="date-sub">@departLocal.ToString("dd/MM/yyyy")</small>
+                        </td>
+                        <td>
+                            <div class="price-bold">@trip.TicketPrice.ToString("N0") ₫</div>
+                            <small class="sold-sub">@trip.SoldTicketCount vé đã bán</small>
+                        </td>
+                        <td>
+                            @if (trip.Status == SmartTicket.Domain.Entities.TripStatus.Scheduled)
+                            {
+                                <span class="status status-active">Scheduled</span>
+                            }
+                            else if (trip.Status == SmartTicket.Domain.Entities.TripStatus.Running)
+                            {
+                                <span class="status status-running">Running</span>
+                            }
+                            else
+                            {
+                                <span class="status status-inactive">@trip.Status</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="trip-action-wrapper">
+                                <!-- Form đổi giá vé trực tiếp có Audit Log -->
+                                <form class="inline-price-form" asp-action="ChangePrice" asp-route-id="@trip.Id" method="post">
+                                    <input name="NewPrice" type="number" min="10000" step="1000" value="@trip.TicketPrice" aria-label="Giá vé mới" class="input-mini-price" />
+                                    <button type="submit" class="button-mini-update">Đổi giá</button>
+                                </form>
+
+                                <div class="trip-sub-actions">
+                                    <a asp-action="EditTrip" asp-route-id="@trip.Id" class="action-link">Sửa lịch</a>
+                                    <span class="sep">·</span>
+                                    <a asp-action="PriceHistory" asp-route-id="@trip.Id" class="action-link">Lịch sử giá</a>
+                                    
+                                    @if (trip.Status == SmartTicket.Domain.Entities.TripStatus.Running)
+                                    {
+                                        <span class="sep">·</span>
+                                        <form asp-controller="OperatorFinance" asp-action="Complete" asp-route-tripId="@trip.Id" method="post" style="display: inline;">
+                                            <button type="submit" class="action-link text-crimson" onclick="return confirm('Xác nhận chuyến xe đã hoàn tất lộ trình?');">Hoàn tất chuyến</button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🚌</div>
+                            <strong>Chưa có chuyến xe nào được tạo.</strong>
+                            <p style="margin: 6px 0 16px; font-size: 13px; color: var(--muted, #777486);">Vui lòng tạo mẫu sơ đồ ghế, phương tiện và tài xế trước khi tạo chuyến xe.</p>
+                            <a asp-action="CreateTrip" class="button button-primary" style="display: inline-flex;">+ Tạo chuyến đầu tiên</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+  .route-title-cell {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .plate-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 850;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.5px;
+  }
+  [data-theme="dark"] .plate-badge, :root:not([data-theme="light"]) .plate-badge {
+    background: rgba(36, 24, 14, 0.9) !important;
+    color: #fbe0a6 !important;
+    border: 1px solid rgba(229, 169, 80, 0.45) !important;
+  }
+  [data-theme="light"] .plate-badge {
+    background: rgba(245, 237, 225, 0.95) !important;
+    color: #4a2d10 !important;
+    border: 1px solid rgba(184, 123, 51, 0.4) !important;
+  }
+  .driver-name-sub, .date-sub, .sold-sub {
+    display: block;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 3px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .time-bold {
+    font-size: 15px;
+    font-weight: 850;
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .price-bold {
+    font-size: 15px;
+    font-weight: 850;
+    color: var(--gold, #e5a950) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .status-running {
+    background: rgba(229, 169, 80, 0.15) !important;
+    color: #fbe0a6 !important;
+    border: 1px solid rgba(229, 169, 80, 0.4) !important;
+  }
+  [data-theme="light"] .status-running {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fcd34d !important;
+  }
+  .trip-action-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .inline-price-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+  }
+  .input-mini-price {
+    width: 115px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    padding: 0 10px !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    outline: none;
+    transition: all 0.2s;
+  }
+  [data-theme="dark"] .input-mini-price, :root:not([data-theme="light"]) .input-mini-price {
+    background: rgba(20, 14, 8, 0.9) !important;
+    border: 1.5px solid rgba(229, 169, 80, 0.4) !important;
+    color: #fcf9f4 !important;
+  }
+  [data-theme="dark"] .input-mini-price:focus, :root:not([data-theme="light"]) .input-mini-price:focus {
+    background: rgba(28, 18, 10, 0.98) !important;
+    border-color: #fce4b8 !important;
+    box-shadow: 0 0 0 3px rgba(229, 169, 80, 0.35) !important;
+  }
+  [data-theme="light"] .input-mini-price {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(184, 123, 51, 0.35) !important;
+    color: #1a120b !important;
+  }
+  .button-mini-update {
+    height: 34px !important;
+    padding: 0 14px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 850 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+  }
+  [data-theme="dark"] .button-mini-update, :root:not([data-theme="light"]) .button-mini-update {
+    background: linear-gradient(135deg, #fce4b8 0%, #e5a950 50%, #b87b33 100%) !important;
+    border: 1px solid rgba(255, 250, 235, 0.8) !important;
+    color: #140d06 !important;
+    box-shadow: 0 3px 12px rgba(229, 169, 80, 0.4) !important;
+  }
+  [data-theme="dark"] .button-mini-update:hover, :root:not([data-theme="light"]) .button-mini-update:hover {
+    filter: brightness(1.15) !important;
+    transform: translateY(-1.5px) scale(1.02);
+    box-shadow: 0 5px 18px rgba(229, 169, 80, 0.6) !important;
+  }
+  [data-theme="light"] .button-mini-update {
+    background: linear-gradient(135deg, #e5a950 0%, #b87b33 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 10px rgba(184, 123, 51, 0.35) !important;
+  }
+  [data-theme="light"] .button-mini-update:hover {
+    filter: brightness(1.08) !important;
+    transform: translateY(-1.5px);
+  }
+  .trip-sub-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .action-link {
+    color: var(--gold, #e5a950) !important;
+    text-decoration: none;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .action-link:hover {
+    color: #ffffff !important;
+    text-decoration: underline;
+  }
+  [data-theme="light"] .action-link {
+    color: var(--bronze, #b87b33) !important;
+  }
+  [data-theme="light"] .action-link:hover {
+    color: #3b2006 !important;
+  }
+  .sep {
+    color: var(--line, rgba(229, 169, 80, 0.3));
+  }
+</style>

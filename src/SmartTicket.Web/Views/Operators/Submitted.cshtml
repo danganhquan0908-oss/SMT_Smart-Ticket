@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "Hồ sơ đã gửi thành công - Smart Ticket";
+}
+
+<section class="login-shell">
+    <!-- LEFT BRAND PANEL -->
+    <div class="login-brand-panel">
+        <div class="login-logo-frame">
+            <img src="~/images/smart-ticket-smt-logo.png" alt="Smart Ticket SMT" asp-append-version="true" />
+        </div>
+        <p class="eyebrow">HỒ SƠ ĐÃ TIẾP NHẬN</p>
+        <h2>Tiếp nhận hồ sơ <em>thành công</em></h2>
+        <p class="login-brand-copy">
+            Cảm ơn bạn đã lựa chọn hợp tác cùng nền tảng bán vé thông minh Smart Ticket - SMT. Chúng tôi cam kết mang lại giải pháp công nghệ vượt trội giúp doanh nghiệp tối ưu hóa doanh thu và tiết kiệm chi phí vận hành.
+        </p>
+        <div class="login-brand-footer">
+            <span class="login-foil-line"></span>
+            <span>SMART TICKET · ĐỒNG HÀNH PHÁT TRIỂN</span>
+        </div>
+    </div>
+
+    <!-- RIGHT CARD -->
+    <div class="login-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #eaf8f2; color: #16825d; display: grid; place-items: center; font-size: 32px; margin: 0 auto 16px;">
+                ✓
+            </div>
+            <p class="eyebrow" style="color: #16825d;">TIẾP NHẬN THÀNH CÔNG</p>
+            <h1 style="font-size: 24px; margin: 0 0 8px;">Hồ sơ đang chờ thẩm định</h1>
+            <p class="muted" style="margin: 0; line-height: 1.6;">
+                Hồ sơ pháp nhân và giấy phép kinh doanh của nhà xe đã được chuyển đến bộ phận kiểm duyệt của Smart Ticket.
+            </p>
+        </div>
+
+        <div style="background: #faf7f5; border: 1px solid #eee9e6; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #5e17eb; font-weight: 800;">01</span>
+                <div>
+                    <strong style="font-size: 12px; color: #1a162b; display: block;">Thời gian xử lý trong 24h</strong>
+                    <span style="font-size: 11px; color: #777486;">Đội ngũ chuyên viên sẽ đối soát thông tin MST và giấy phép kinh doanh vận tải.</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <span style="color: #5e17eb; font-weight: 800;">02</span>
+                <div>
+                    <strong style="font-size: 12px; color: #1a162b; display: block;">Kiểm tra hộp thư email đại diện</strong>
+                    <span style="font-size: 11px; color: #777486;">Khi hồ sơ được duyệt, một liên kết kích hoạt tài khoản sẽ gửi đến email của bạn kèm hướng dẫn cài đặt mật khẩu & 2FA.</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a class="button button-primary button-wide" asp-controller="Home" asp-action="Index">
+                Về trang chủ Smart Ticket
+            </a>
+            <div style="text-align: center; margin-top: 6px;">
+                <span style="font-size: 11px; color: #777486;">Cần hỗ trợ gấp? Gọi ngay Hotline đối tác: <strong style="color: #c81d4a;">1900 888 666</strong></span>
+            </div>
+        </div>
+    </div>
+</section>

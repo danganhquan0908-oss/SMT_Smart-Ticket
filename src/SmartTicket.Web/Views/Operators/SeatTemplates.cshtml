@@ -1,0 +1,319 @@
+@model IReadOnlyList<SmartTicket.Application.Operators.SeatTemplateDto>
+@{
+    ViewData["Title"] = "Mẫu Sơ đồ Ghế - Smart Ticket";
+}
+
+<div class="seat-templates-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">ĐỘI XE & QUY CÁCH PHƯƠNG TIỆN</p>
+            <h1>Mẫu sơ đồ xe & Quy cách chỗ</h1>
+            <p>Thiết kế cấu trúc tầng và bố trí mã ghế chuẩn hóa (A01 - Ann, B01 - Bnn) để áp dụng đồng bộ cho các xe trong đội.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="button button-outline" asp-action="Index">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Về trung tâm điều hành
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_Feedback")
+
+    <div class="template-layout-grid">
+        <!-- FORM TẠO SƠ ĐỒ MỚI -->
+        <div class="form-card template-form-card">
+            <div class="form-header-bar">
+                <div class="brand-sub-badge">CẤU TẠO BỐ CỤC</div>
+                <h2>Tạo mẫu sơ đồ mới</h2>
+                <p class="muted">Hệ thống sẽ tự động sinh mã ghế theo chuẩn 2 tầng (A cho tầng dưới, B cho tầng trên).</p>
+            </div>
+
+            <form asp-action="CreateSeatTemplate" method="post" id="templateForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+                <div class="form-grid">
+                    <!-- TÊN MẪU -->
+                    <div class="field field-full">
+                        <label for="templateName">Tên mẫu sơ đồ xe <span class="required">*</span></label>
+                        <input id="templateName" name="Name" class="form-input" required maxlength="100" placeholder="Ví dụ: Giường nằm VIP 34 phòng hoặc Limousine 22 chỗ" oninput="updateLivePreview()" />
+                        <small class="field-help">Đặt tên gợi nhớ để phân loại khi gắn vào từng xe cụ thể.</small>
+                    </div>
+
+                    <!-- LOẠI XE -->
+                    <div class="field field-full">
+                        <label for="vehicleType">Chủng loại phương tiện <span class="required">*</span></label>
+                        <input id="vehicleType" name="VehicleType" class="form-input" required maxlength="80" placeholder="Ví dụ: Giường nằm cao cấp, Limousine Skybus, Ghế ngồi" oninput="updateLivePreview()" />
+                    </div>
+
+                    <!-- SỐ TẦNG -->
+                    <div class="field">
+                        <label for="deckCountSelect">Số tầng xe <span class="required">*</span></label>
+                        <select id="deckCountSelect" name="DeckCount" class="form-select" onchange="updateLivePreview()">
+                            <option value="1">1 tầng (Xe ghế ngồi / Giường 1 tầng)</option>
+                            <option value="2" selected>2 tầng (Xe giường nằm thông dụng)</option>
+                        </select>
+                    </div>
+
+                    <!-- SỐ GHẾ MỖI TẦNG -->
+                    <div class="field">
+                        <label for="seatsPerDeckInput">Số chỗ mỗi tầng <span class="required">*</span></label>
+                        <input id="seatsPerDeckInput" name="SeatsPerDeck" type="number" min="1" max="60" value="17" class="form-input" required oninput="updateLivePreview()" />
+                        <small class="field-help">Giá trị từ 1 đến 60 chỗ / tầng.</small>
+                    </div>
+                </div>
+
+                <!-- LIVE PREVIEW CONTAINER -->
+                <div class="seat-live-preview-box">
+                    <div class="preview-header">
+                        <span class="preview-badge">TRỰC QUAN HÓA SƠ ĐỒ</span>
+                        <strong id="previewSummary">Tổng sức chứa: 34 chỗ (2 tầng)</strong>
+                    </div>
+
+                    <div class="preview-decks-wrap" id="previewDecksWrap">
+                        <!-- DECK 1 -->
+                        <div class="preview-deck-panel">
+                            <span class="deck-title">Tầng 1 (Tầng dưới · Ký hiệu A)</span>
+                            <div class="preview-pills" id="deck1Pills">
+                                <span class="code-pill">A01</span>
+                                <span class="code-pill">A02</span>
+                                <span class="code-pill">...</span>
+                                <span class="code-pill">A17</span>
+                            </div>
+                        </div>
+
+                        <!-- DECK 2 -->
+                        <div class="preview-deck-panel" id="deck2Panel">
+                            <span class="deck-title">Tầng 2 (Tầng trên · Ký hiệu B)</span>
+                            <div class="preview-pills" id="deck2Pills">
+                                <span class="code-pill">B01</span>
+                                <span class="code-pill">B02</span>
+                                <span class="code-pill">...</span>
+                                <span class="code-pill">B17</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <button type="submit" class="button button-primary">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                        Lưu mẫu sơ đồ ghế
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT INFO CARD -->
+        <div class="template-guide-card">
+            <div class="guide-box">
+                <div class="guide-icon">📐</div>
+                <h3>Quy chuẩn đánh mã ghế Smart Ticket</h3>
+                <p>
+                    Để hành khách dễ dàng nhận diện và nhân viên kiểm soát vé tại bến không bị nhầm lẫn, sơ đồ trên hệ thống tuân thủ chặt chẽ:
+                </p>
+                <ul class="guide-bullets">
+                    <li>
+                        <strong>Tiền tố tầng:</strong> Tầng 1 sử dụng tiền tố <code>A</code>, Tầng 2 sử dụng tiền tố <code>B</code>.
+                    </li>
+                    <li>
+                        <strong>Định dạng 2 chữ số:</strong> Các số thứ tự luôn có 2 chữ số (<code>01</code>, <code>02</code>, ... <code>17</code>).
+                    </li>
+                    <li>
+                        <strong>Đồng bộ trạng thái giữ chỗ:</strong> Khi khách chọn một mã ghế, hệ thống khóa giữ chỗ bằng Redis RedLock trong 10 phút, tự động giải phóng nếu không hoàn tất thanh toán.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="quick-link-box">
+                <strong>Bạn đã tạo sơ đồ xong?</strong>
+                <p>Tiếp tục gán sơ đồ này vào các xe trong đội phương tiện.</p>
+                <a class="button button-outline button-wide" asp-action="Vehicles">
+                    Đi đến Quản lý Phương tiện →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE LISTING -->
+    <div class="table-card" style="margin-top: 28px;">
+        <div class="table-toolbar">
+            <div>
+                <strong>Danh sách các mẫu sơ đồ ghế đã khởi tạo</strong>
+                <span>(@Model.Count mẫu sơ đồ)</span>
+            </div>
+            <div class="live-label"><i></i> Cấu hình hoạt động</div>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên mẫu sơ đồ</th>
+                        <th>Chủng loại xe</th>
+                        <th>Cấu trúc tầng</th>
+                        <th>Tổng sức chứa</th>
+                        <th>Dải mã ghế áp dụng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var totalCapacity = item.DeckCount * item.SeatsPerDeck;
+                        var lastDeckChar = (char)('A' + item.DeckCount - 1);
+                        var maxNumStr = item.SeatsPerDeck.ToString("00");
+
+                        <tr>
+                            <td class="primary-cell">
+                                <div class="template-name-title">@item.Name</div>
+                            </td>
+                            <td>
+                                <span class="vehicle-type-tag">@item.VehicleType</span>
+                            </td>
+                            <td>
+                                <strong>@item.DeckCount tầng</strong>
+                                <small style="display:block; color:#777486; font-size:10px;">(@item.SeatsPerDeck ghế / tầng)</small>
+                            </td>
+                            <td>
+                                <strong style="color: #5e17eb; font-size: 14px;">@totalCapacity chỗ</strong>
+                            </td>
+                            <td>
+                                <div class="seat-sample-codes">
+                                    <span class="code-pill">A01 ... A@maxNumStr</span>
+                                    @if (item.DeckCount > 1)
+                                    {
+                                        <span class="code-pill" style="margin-left: 4px; background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">B01 ... B@maxNumStr</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div class="empty-symbol">💺</div>
+                                <strong>Chưa có mẫu sơ đồ ghế nào</strong>
+                                <p>Hãy tạo mẫu sơ đồ đầu tiên ở biểu mẫu phía trên để bắt đầu thêm xe vào đội.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.seat-templates-page { max-width: 1280px; margin: 0 auto; }
+.template-layout-grid {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr); gap: 24px; align-items: start;
+}
+.template-form-card { max-width: 100%; padding: 28px; }
+
+.seat-live-preview-box {
+    margin-top: 20px; background: #faf7f5; border: 1px solid #eee9e6; border-radius: 12px; padding: 18px;
+}
+.preview-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.preview-badge {
+    font-size: 9px; font-weight: 800; color: #5e17eb; letter-spacing: 1px; background: #f2edff;
+    padding: 3px 8px; border-radius: 6px;
+}
+#previewSummary { font-size: 13px; color: #1a162b; }
+
+.preview-decks-wrap { display: flex; flex-direction: column; gap: 12px; }
+.preview-deck-panel {
+    background: #fff; border: 1px solid #eee9e6; border-radius: 10px; padding: 12px;
+}
+.deck-title { font-size: 11px; font-weight: 700; color: #777486; display: block; margin-bottom: 8px; }
+.preview-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.template-guide-card { display: flex; flex-direction: column; gap: 18px; }
+.guide-box {
+    background: #fff; border: 1px solid #eee9e6; border-radius: 16px; padding: 24px;
+    box-shadow: 0 4px 16px rgba(26,22,43,0.04);
+}
+.guide-icon { font-size: 28px; margin-bottom: 10px; }
+.guide-box h3 { font-size: 16px; font-weight: 800; color: #1a162b; margin: 0 0 10px; }
+.guide-box p { font-size: 12px; color: #777486; line-height: 1.6; margin: 0 0 14px; }
+.guide-bullets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.guide-bullets li { font-size: 11px; color: #777486; line-height: 1.5; }
+.guide-bullets strong { color: #1a162b; }
+.guide-bullets code { background: #f2edff; color: #5e17eb; padding: 2px 5px; border-radius: 4px; font-weight: 700; }
+
+.quick-link-box {
+    background: #1a162b; color: #fff; border-radius: 16px; padding: 22px;
+}
+.quick-link-box strong { font-size: 13px; color: #fff; display: block; margin-bottom: 4px; }
+.quick-link-box p { font-size: 11px; color: #d5cddb; margin: 0 0 14px; }
+.quick-link-box .button-outline { width: 100%; border-color: #ffffff33; color: #fff; background: transparent; }
+.quick-link-box .button-outline:hover { background: #ffffff18; }
+
+.template-name-title { font-weight: 800; color: #1a162b; font-size: 13px; }
+.vehicle-type-tag {
+    font-size: 11px; font-weight: 600; background: #faf7f5; border: 1px solid #e2dce4;
+    padding: 3px 8px; border-radius: 6px; color: #1a162b;
+}
+
+@@media (max-width: 900px) {
+    .template-layout-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+@section Scripts {
+<script>
+    function updateLivePreview() {
+        const deckCountSelect = document.getElementById('deckCountSelect');
+        const seatsPerDeckInput = document.getElementById('seatsPerDeckInput');
+        const summary = document.getElementById('previewSummary');
+        const deck2Panel = document.getElementById('deck2Panel');
+        const deck1Pills = document.getElementById('deck1Pills');
+        const deck2Pills = document.getElementById('deck2Pills');
+
+        if (!deckCountSelect || !seatsPerDeckInput || !summary) return;
+
+        const decks = parseInt(deckCountSelect.value) || 1;
+        const seats = Math.max(1, Math.min(60, parseInt(seatsPerDeckInput.value) || 1));
+        const total = decks * seats;
+
+        summary.textContent = `Tổng sức chứa: ${total} chỗ (${decks} tầng)`;
+
+        // Deck 1
+        let d1Html = '';
+        if (seats <= 4) {
+            for (let i = 1; i <= seats; i++) {
+                const num = i < 10 ? '0' + i : i;
+                d1Html += `<span class="code-pill">A${num}</span> `;
+            }
+        } else {
+            const last = seats < 10 ? '0' + seats : seats;
+            d1Html = `<span class="code-pill">A01</span> <span class="code-pill">A02</span> <span class="code-pill">...</span> <span class="code-pill">A${last}</span>`;
+        }
+        if (deck1Pills) deck1Pills.innerHTML = d1Html;
+
+        // Deck 2
+        if (decks > 1) {
+            if (deck2Panel) deck2Panel.style.display = 'block';
+            let d2Html = '';
+            if (seats <= 4) {
+                for (let i = 1; i <= seats; i++) {
+                    const num = i < 10 ? '0' + i : i;
+                    d2Html += `<span class="code-pill" style="background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">B${num}</span> `;
+                }
+            } else {
+                const last = seats < 10 ? '0' + seats : seats;
+                d2Html = `<span class="code-pill" style="background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">B01</span> <span class="code-pill" style="background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">B02</span> <span class="code-pill" style="background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">...</span> <span class="code-pill" style="background:#fff0f3; color:#c81d4a; border-color:#f7aabf;">B${last}</span>`;
+            }
+            if (deck2Pills) deck2Pills.innerHTML = d2Html;
+        } else {
+            if (deck2Panel) deck2Panel.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', updateLivePreview);
+</script>
+}

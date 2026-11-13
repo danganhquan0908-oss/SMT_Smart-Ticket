@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+.vscode/
+.tools/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal
+.env
+src/SmartTicket.Web/App_Data/operator-licenses/
+src/SmartTicket.Web/appsettings.Development.json
+*.pfx

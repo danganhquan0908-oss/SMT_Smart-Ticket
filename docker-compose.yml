@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: smartticket-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartticket
+      POSTGRES_USER: smartticket
+      POSTGRES_PASSWORD: smartticket_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - smartticket-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartticket -d smartticket"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:8-alpine
+    container_name: smartticket-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - smartticket-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  smartticket-postgres:
+  smartticket-redis:
