@@ -236,73 +236,94 @@ public sealed class AccountController(
     [HttpGet("tickets"), Authorize]
     public async Task<IActionResult> Tickets(CancellationToken ct)
     {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Challenge();
-
-        var bookings = await customerAccount.GetBookingsAsync(userId, ct);
-        var now = DateTime.UtcNow;
-
-        var upcoming = bookings.Where(b => b.Status == "Paid" && b.DepartureTimeUtc > now).ToList();
-        var pending = bookings.Where(b => b.Status == "Pending" && b.ExpiresAtUtc > now).ToList();
-        var history = bookings.Where(b => !(b.Status == "Paid" && b.DepartureTimeUtc > now) && !(b.Status == "Pending" && b.ExpiresAtUtc > now)).ToList();
-
-        ViewBag.BankBin = configuration?["Payments:BankBin"] ?? "970415";
-        ViewBag.BankName = configuration?["Payments:BankName"] ?? "VietinBank";
-        ViewBag.AccountNumber = configuration?["Payments:AccountNumber"] ?? "103880262473";
-        ViewBag.AccountName = configuration?["Payments:AccountName"] ?? "DANG ANH QUAN";
-        ViewBag.IsDev = environment?.IsDevelopment() ?? false;
-
-        return View(new CustomerTicketsViewModel
+        try
         {
-            Upcoming = upcoming,
-            Pending = pending,
-            History = history
-        });
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Challenge();
+
+            var bookings = await customerAccount.GetBookingsAsync(userId, ct);
+            var now = DateTime.UtcNow;
+
+            var upcoming = bookings.Where(b => b.Status == "Paid" && b.DepartureTimeUtc > now).ToList();
+            var pending = bookings.Where(b => b.Status == "Pending" && b.ExpiresAtUtc > now).ToList();
+            var history = bookings.Where(b => !(b.Status == "Paid" && b.DepartureTimeUtc > now) && !(b.Status == "Pending" && b.ExpiresAtUtc > now)).ToList();
+
+            ViewBag.BankBin = configuration?["Payments:BankBin"] ?? "970415";
+            ViewBag.BankName = configuration?["Payments:BankName"] ?? "VietinBank";
+            ViewBag.AccountNumber = configuration?["Payments:AccountNumber"] ?? "103880262473";
+            ViewBag.AccountName = configuration?["Payments:AccountName"] ?? "DANG ANH QUAN";
+            ViewBag.IsDev = environment?.IsDevelopment() ?? false;
+
+            return View(new CustomerTicketsViewModel
+            {
+                Upcoming = upcoming,
+                Pending = pending,
+                History = history
+            });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return new EmptyResult();
+        }
     }
 
     [HttpGet("bookings/{bookingId:guid}/payment-details"), Authorize]
     public async Task<IActionResult> GetPaymentDetails(Guid bookingId, CancellationToken ct)
     {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Challenge();
-
-        var details = await customerAccount.GetPaymentDetailsAsync(userId, bookingId, ct);
-        if (details is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
-
-        if (details.Status == "Expired" || details.SecondsRemaining <= 0)
+        try
         {
-            return Conflict(new { status = "Expired", message = "Thời gian giữ chỗ 7 phút đã hết hoặc booking không còn chờ thanh toán." });
-        }
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Challenge();
 
-        string? qrImage = details.QrImage;
-        if (string.IsNullOrWhiteSpace(qrImage) && !string.IsNullOrWhiteSpace(details.QrPayload))
+            var details = await customerAccount.GetPaymentDetailsAsync(userId, bookingId, ct);
+            if (details is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
+
+            if (details.Status == "Expired" || details.SecondsRemaining <= 0)
+            {
+                return Conflict(new { status = "Expired", message = "Thời gian giữ chỗ 7 phút đã hết hoặc booking không còn chờ thanh toán." });
+            }
+
+            string? qrImage = details.QrImage;
+            if (string.IsNullOrWhiteSpace(qrImage) && !string.IsNullOrWhiteSpace(details.QrPayload))
+            {
+                try
+                {
+                    using var generator = new QRCodeGenerator();
+                    using var data = generator.CreateQrCode(details.QrPayload, QRCodeGenerator.ECCLevel.Q);
+                    var png = new PngByteQRCode(data).GetGraphic(12);
+                    qrImage = "data:image/png;base64," + Convert.ToBase64String(png);
+                }
+                catch
+                {
+                    // fallback
+                }
+            }
+
+            return Ok(details with { QrImage = qrImage });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            try
-            {
-                using var generator = new QRCodeGenerator();
-                using var data = generator.CreateQrCode(details.QrPayload, QRCodeGenerator.ECCLevel.Q);
-                var png = new PngByteQRCode(data).GetGraphic(12);
-                qrImage = "data:image/png;base64," + Convert.ToBase64String(png);
-            }
-            catch
-            {
-                // fallback
-            }
+            return new EmptyResult();
         }
-
-        return Ok(details with { QrImage = qrImage });
     }
 
     [HttpGet("bookings/{bookingId:guid}/payment-state"), Authorize]
     public async Task<IActionResult> GetPaymentState(Guid bookingId, CancellationToken ct)
     {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Challenge();
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == Guid.Empty) return Challenge();
 
-        var state = await customerAccount.GetPaymentStateAsync(userId, bookingId, ct);
-        if (state is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
+            var state = await customerAccount.GetPaymentStateAsync(userId, bookingId, ct);
+            if (state is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
 
-        return Ok(state);
+            return Ok(state);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return new EmptyResult();
+        }
     }
 
     [HttpPost("bookings/{bookingId:guid}/simulate-payment"), Authorize]
