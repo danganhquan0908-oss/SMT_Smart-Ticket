@@ -152,6 +152,28 @@ public sealed class PaymentsWebhookController(
             await hub.Clients.Group(TripSeatsHub.Group(result.TripId.Value)).SendAsync("SeatsChanged", new { seatCodes = result.SeatCodes, status = "Booked" }, ct);
         }
 
+        if (result.BookingId.HasValue)
+        {
+            await hub.Clients.Group(TripSeatsHub.GroupForBooking(result.BookingId.Value)).SendAsync("PaymentSucceeded", new { bookingId = result.BookingId.Value, bookingCode = result.BookingCode }, ct);
+        }
+        else
+        {
+            // Fallback: nếu service chưa trả về BookingId trong Dto thì tra cứu nhanh qua bookingCode nếu có database
+            try
+            {
+                var bookingCode = payload.Reference.StartsWith("STKT", StringComparison.OrdinalIgnoreCase) ? payload.Reference[4..] : payload.Reference;
+                var matchedBooking = await db.Bookings.AsNoTracking().SingleOrDefaultAsync(x => x.BookingCode == bookingCode, ct);
+                if (matchedBooking != null)
+                {
+                    await hub.Clients.Group(TripSeatsHub.GroupForBooking(matchedBooking.Id)).SendAsync("PaymentSucceeded", new { bookingId = matchedBooking.Id, bookingCode = matchedBooking.BookingCode }, ct);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Bỏ qua nếu DbContext không được cấu hình (ví dụ trong mock unit test)
+            }
+        }
+
         return Ok(new { success = true, result.Processed, result.Result, reference = payload.Reference });
     }
 
@@ -207,6 +229,8 @@ public sealed class PaymentsWebhookController(
         var result = await payments.ProcessWebhookAsync(payload, rawJson, ct);
         if (result.TripId.HasValue && result.SeatCodes is not null)
             await hub.Clients.Group(TripSeatsHub.Group(result.TripId.Value)).SendAsync("SeatsChanged", new { seatCodes = result.SeatCodes, status = "Booked" }, ct);
+
+        await hub.Clients.Group(TripSeatsHub.GroupForBooking(booking.Id)).SendAsync("PaymentSucceeded", new { bookingId = booking.Id, bookingCode = booking.BookingCode }, ct);
 
         return Ok(new { success = true, result.Processed, result.Result, redirectUrl = "/tickets/lookup?token=" + Uri.EscapeDataString(token) });
     }

@@ -103,9 +103,9 @@
                 @foreach (var b in Model.Pending)
                 {
                     var depLocal = b.DepartureTimeUtc.AddHours(7);
-                    <div class="booking-ticket-card card-pending">
+                    <div class="booking-ticket-card card-pending" id="booking-card-@b.BookingId" data-booking-id="@b.BookingId" data-expires="@b.ExpiresAtUtc.ToString("o")">
                         <div class="card-top-row">
-                            <span class="badge-status-pending">⏱️ ĐANG GIỮ CHỖ (7 PHÚT)</span>
+                            <span class="badge-status-pending booking-countdown-pill" data-expires="@b.ExpiresAtUtc.ToString("o")">⏱️ Đang tính giờ...</span>
                             <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
                         </div>
                         <div class="card-route-title">
@@ -125,8 +125,19 @@
                                 <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
                             </div>
                         </div>
-                        <div class="card-action-bar">
-                            <span class="text-muted small">Quét mã QR thanh toán bằng app ngân hàng với nội dung: <strong>STKT@(b.BookingCode)</strong></span>
+                        <div class="card-action-bar pending-actions-bar">
+                            <div class="ref-copy-wrap">
+                                <span class="text-muted small">Nội dung: <strong class="ref-code">STKT@(b.BookingCode)</strong></span>
+                                <button type="button" class="btn-copy-chip btn-copy-inline" data-copy="STKT@(b.BookingCode)">Sao chép</button>
+                            </div>
+                            <button type="button" class="button-pay-submit btn-resume-pay"
+                                    data-booking-id="@b.BookingId"
+                                    data-booking-code="@b.BookingCode"
+                                    data-amount="@b.TotalAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                    data-expires="@b.ExpiresAtUtc.ToString("o")">
+                                <span>⚡ Tiếp tục thanh toán VietQR</span>
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </button>
                         </div>
                     </div>
                 }
@@ -153,9 +164,16 @@
                     var isPaid = b.Status == "Paid";
                     <div class="booking-ticket-card card-history">
                         <div class="card-top-row">
-                            <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")">
-                                @(isPaid ? "✓ ĐÃ HOÀN THÀNH" : "✕ ĐÃ HẾT HẠN")
-                            </span>
+                            @if (b.Status == "PaidOverdueUnassigned")
+                            {
+                                <span class="badge-status-warning">⚠️ THANH TOÁN TRỄ (GHẾ ĐÃ BÁN)</span>
+                            }
+                            else
+                            {
+                                <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")">
+                                    @(isPaid ? "✓ ĐÃ HOÀN THÀNH" : "✕ ĐÃ HẾT HẠN")
+                                </span>
+                            }
                             <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
                         </div>
                         <div class="card-route-title">
@@ -179,6 +197,13 @@
                                 <span class="m-val">@b.TotalAmount.ToString("N0") ₫</span>
                             </div>
                         </div>
+                        @if (b.Status == "PaidOverdueUnassigned")
+                        {
+                            <div class="overdue-notice-box">
+                                <strong>⚠️ Giao dịch chuyển tiền sau khi hết hạn giữ chỗ:</strong>
+                                <p>Hệ thống đã nhận thanh toán nhưng ghế đã bị bán cho khách khác sau khi hết hạn 7 phút. Vui lòng liên hệ hotline tổng đài <strong>1900 6868</strong> để được xếp chuyến tương đương hoặc hoàn tiền 100%.</p>
+                            </div>
+                        }
                         @if (isPaid && b.Tickets.Count > 0)
                         {
                             <div class="card-action-bar">
@@ -192,8 +217,94 @@
             </div>
         }
     </div>
+    <!-- MODAL VIETQR POPUP TRỰC TIẾP TRÊN TRANG (FROSTED GLASS) -->
+    <div id="qr-modal-backdrop" class="qr-modal-backdrop" style="display: none;">
+        <div class="qr-modal-card">
+            <button type="button" class="btn-close-modal" id="btn-close-modal" title="Đóng cửa sổ">✕</button>
+            
+            <div class="modal-header">
+                <div class="modal-badge-row">
+                    <span class="badge-vietqr-brand">⚡ VietQR · Napas 247 · <span id="modal-bank-title">@(ViewBag.BankName ?? "VietinBank")</span></span>
+                    <span class="badge-modal-timer" id="modal-countdown-badge">⏱️ 07:00</span>
+                </div>
+                <h2 class="modal-title">Quét Mã VietQR Tiếp Tục Thanh Toán</h2>
+                <p class="modal-subtitle">Mở ứng dụng Ngân hàng bất kỳ hoặc MoMo/VNPay để quét mã thanh toán 1-chạm</p>
+            </div>
+
+            <div class="modal-body-layout">
+                <!-- Cột trái: QR Code -->
+                <div class="modal-qr-column">
+                    <div class="modal-qr-frame" id="modal-qr-frame">
+                        <img id="modal-qr-image" src="" alt="Mã VietQR" />
+                        <div id="modal-qr-overlay-expired" class="modal-expired-overlay" style="display: none;">
+                            <span class="expired-icon">⚠️</span>
+                            <h4>Hết hạn giữ chỗ 7 phút</h4>
+                            <p>Thời gian giữ chỗ đã hết, ghế đã được tự động giải phóng.</p>
+                        </div>
+                    </div>
+                    <div class="modal-lock-tag">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        <span>Số tiền đã khóa cứng (EMVCo Tag 54)</span>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Thông tin chuyển khoản -->
+                <div class="modal-info-column">
+                    <div class="modal-specs-box">
+                        <div class="modal-spec-row">
+                            <span class="m-label">Ngân hàng thụ hưởng:</span>
+                            <strong class="m-val" id="modal-bank-name">@(ViewBag.BankName ?? "VietinBank (Napas 247)")</strong>
+                        </div>
+                        <div class="modal-spec-row">
+                            <span class="m-label">Số tài khoản:</span>
+                            <div class="m-val-wrap">
+                                <strong class="m-val font-mono" id="modal-account-num">@(ViewBag.AccountNumber ?? "")</strong>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-acc">Sao chép</button>
+                            </div>
+                        </div>
+                        <div class="modal-spec-row">
+                            <span class="m-label">Chủ tài khoản:</span>
+                            <strong class="m-val" id="modal-account-name">@(ViewBag.AccountName ?? "")</strong>
+                        </div>
+                        <div class="modal-spec-row">
+                            <span class="m-label">Số tiền:</span>
+                            <div class="m-val-wrap">
+                                <strong class="m-val text-crimson font-large" id="modal-amount-display">0 ₫</strong>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-amount">Sao chép</button>
+                            </div>
+                        </div>
+                        <div class="modal-spec-row highlight-spec">
+                            <span class="m-label">Nội dung CK:</span>
+                            <div class="m-val-wrap">
+                                <strong class="m-val font-mono text-gold" id="modal-ref-display">STKT...</strong>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-ref">Sao chép</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-status-badge" id="modal-status-box">
+                        <div class="status-pulse-dot"></div>
+                        <div class="status-text-content">
+                            <strong id="modal-status-title">Đang chờ bạn quét mã thanh toán...</strong>
+                            <p id="modal-status-desc">Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions-col">
+                        @if (ViewBag.IsDev == true)
+                        {
+                            <button type="button" class="btn-modal-dev" id="btn-modal-dev-simulate">
+                                ⚡ Giả lập thanh toán thành công (Môi trường Dev)
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
 <script>
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tickets-tabs-nav .tab-pill').forEach(el => el.classList.remove('active'));
@@ -203,6 +314,267 @@ function switchTab(tabId, btn) {
     const target = document.getElementById('tab-' + tabId);
     if (target) target.style.display = 'block';
 }
+
+(() => {
+    // Copy handlers cho các nút inline
+    document.querySelectorAll('.btn-copy-inline').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const text = btn.getAttribute('data-copy');
+            if (text) {
+                navigator.clipboard.writeText(text);
+                const old = btn.textContent;
+                btn.textContent = '✓ Đã chép';
+                setTimeout(() => btn.textContent = old, 2000);
+            }
+        });
+    });
+
+    // Đồng hồ đếm ngược từng giây trên các thẻ giữ chỗ
+    function updateCardCountdowns() {
+        const now = new Date().getTime();
+        document.querySelectorAll('.booking-countdown-pill').forEach(el => {
+            const expiresStr = el.getAttribute('data-expires');
+            if (!expiresStr) return;
+            const expires = new Date(expiresStr).getTime();
+            const diffSec = Math.floor((expires - now) / 1000);
+            const card = el.closest('.card-pending');
+            const btn = card ? card.querySelector('.btn-resume-pay') : null;
+
+            if (diffSec <= 0) {
+                el.textContent = '✕ ĐÃ HẾT HẠN GIỮ CHỖ';
+                el.classList.remove('critical');
+                el.classList.add('expired');
+                if (card) {
+                    card.classList.add('card-dimmed-expired');
+                }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span>Đã hết hạn giữ chỗ</span>';
+                }
+            } else {
+                const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const secs = String(diffSec % 60).padStart(2, '0');
+                el.textContent = `⏱️ GIỮ CHỖ CÒN: ${mins}:${secs}`;
+                if (diffSec <= 120) {
+                    el.classList.add('critical');
+                } else {
+                    el.classList.remove('critical');
+                }
+            }
+        });
+    }
+    setInterval(updateCardCountdowns, 1000);
+    updateCardCountdowns();
+
+    // Quản lý Modal VietQR
+    let currentBookingId = null;
+    let currentBookingCode = '';
+    let currentAmount = 0;
+    let modalTimer = null;
+    let modalPollTimer = null;
+    let modalRemaining = 420;
+    let signalRConn = null;
+
+    const modalBackdrop = document.getElementById('qr-modal-backdrop');
+    const modalQrImg = document.getElementById('modal-qr-image');
+    const modalCountdownEl = document.getElementById('modal-countdown-badge');
+    const modalAmountEl = document.getElementById('modal-amount-display');
+    const modalRefEl = document.getElementById('modal-ref-display');
+    const modalExpiredOverlay = document.getElementById('modal-qr-overlay-expired');
+    const modalStatusTitle = document.getElementById('modal-status-title');
+    const modalStatusDesc = document.getElementById('modal-status-desc');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalDevBtn = document.getElementById('btn-modal-dev-simulate');
+
+    const defaultBankBin = '@(ViewBag.BankBin ?? "970415")';
+    const defaultAccountNumber = '@(ViewBag.AccountNumber ?? "103880262473")';
+    const defaultAccountName = '@(ViewBag.AccountName ?? "DANG ANH QUAN")';
+
+    const openQrModal = async (bookingId, bookingCode, amount, expiresStr) => {
+        currentBookingId = bookingId;
+        currentBookingCode = bookingCode;
+        currentAmount = amount;
+
+        const expires = new Date(expiresStr).getTime();
+        const now = new Date().getTime();
+        modalRemaining = Math.max(0, Math.floor((expires - now) / 1000));
+
+        const refText = 'STKT' + bookingCode;
+        const amountFormatted = Number(amount).toString();
+
+        modalAmountEl.textContent = Number(amount).toLocaleString('vi-VN') + ' ₫';
+        modalRefEl.textContent = refText;
+        modalExpiredOverlay.style.display = modalRemaining <= 0 ? 'flex' : 'none';
+        modalStatusTitle.textContent = "Đang chờ bạn quét mã thanh toán...";
+        modalStatusDesc.textContent = "Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.";
+        modalStatusTitle.style.color = "var(--ink, #fff)";
+
+        // Fast fallback image từ Napas VietQR CDN
+        const vietQrUrl = `https://img.vietqr.io/image/${defaultBankBin}-${defaultAccountNumber}-compact2.png?amount=${amountFormatted}&addInfo=${encodeURIComponent(refText)}&accountName=${encodeURIComponent(defaultAccountName)}`;
+        modalQrImg.src = vietQrUrl;
+
+        modalBackdrop.style.display = 'flex';
+
+        // Đếm ngược trong modal
+        clearInterval(modalTimer);
+        const updateModalCountdown = () => {
+            const mins = String(Math.floor(modalRemaining / 60)).padStart(2, '0');
+            const secs = String(modalRemaining % 60).padStart(2, '0');
+            modalCountdownEl.textContent = `⏱️ ${mins}:${secs}`;
+            if (modalRemaining <= 0) {
+                clearInterval(modalTimer);
+                modalExpiredOverlay.style.display = 'flex';
+            } else {
+                modalRemaining--;
+            }
+        };
+        updateModalCountdown();
+        modalTimer = setInterval(updateModalCountdown, 1000);
+
+        // Gọi API lấy ảnh Base64 offline và chi tiết chính xác từ server
+        try {
+            const res = await fetch(`/account/bookings/${bookingId}/payment-details`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.qrImage) modalQrImg.src = data.qrImage;
+                if (data.secondsRemaining !== undefined) modalRemaining = data.secondsRemaining;
+                if (data.bankName) document.getElementById('modal-bank-name').textContent = data.bankName;
+                if (data.accountNumber) document.getElementById('modal-account-num').textContent = data.accountNumber;
+                if (data.accountName) document.getElementById('modal-account-name').textContent = data.accountName;
+            } else if (res.status === 409) {
+                modalExpiredOverlay.style.display = 'flex';
+            }
+        } catch (err) {
+            console.warn("Could not fetch detailed payment info:", err);
+        }
+
+        // Bắt đầu Polling 2.5s kiểm tra trạng thái
+        clearInterval(modalPollTimer);
+        modalPollTimer = setInterval(async () => {
+            try {
+                const pRes = await fetch(`/account/bookings/${bookingId}/payment-state`);
+                if (pRes.ok) {
+                    const state = await pRes.json();
+                    if (state.isPaid) {
+                        onPaymentSuccess();
+                    } else if (state.isExpired) {
+                        modalExpiredOverlay.style.display = 'flex';
+                    }
+                }
+            } catch (e) {
+                console.warn("Polling payment state failed:", e);
+            }
+        }, 2500);
+
+        // Tham gia nhóm SignalR của booking này
+        if (signalRConn && signalRConn.state === 'Connected') {
+            try {
+                await signalRConn.invoke('JoinBooking', bookingId);
+            } catch (e) {
+                console.warn("JoinBooking SignalR error:", e);
+            }
+        }
+    };
+
+    const onPaymentSuccess = () => {
+        clearInterval(modalTimer);
+        clearInterval(modalPollTimer);
+        modalStatusTitle.textContent = "✓ Thanh toán thành công!";
+        modalStatusTitle.style.color = "#10b981";
+        modalStatusDesc.textContent = "Hệ thống đã nhận thanh toán. Đang chuyển tới danh sách vé...";
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    };
+
+    const closeQrModal = () => {
+        modalBackdrop.style.display = 'none';
+        clearInterval(modalTimer);
+        clearInterval(modalPollTimer);
+        if (signalRConn && signalRConn.state === 'Connected' && currentBookingId) {
+            signalRConn.invoke('LeaveBooking', currentBookingId).catch(() => {});
+        }
+        currentBookingId = null;
+    };
+
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeQrModal);
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener('click', (e) => {
+            if (e.target === modalBackdrop) closeQrModal();
+        });
+    }
+
+    // Gán sự kiện click nút Tiếp tục thanh toán
+    document.querySelectorAll('.btn-resume-pay').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const bId = btn.getAttribute('data-booking-id');
+            const bCode = btn.getAttribute('data-booking-code');
+            const bAmt = btn.getAttribute('data-amount');
+            const bExp = btn.getAttribute('data-expires');
+            openQrModal(bId, bCode, bAmt, bExp);
+        });
+    });
+
+    // Copy trong modal
+    const setupCopy = (id, textFn) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('click', () => {
+                const text = textFn();
+                if (text) {
+                    navigator.clipboard.writeText(text);
+                    const old = el.textContent;
+                    el.textContent = '✓ Đã chép';
+                    setTimeout(() => el.textContent = old, 2000);
+                }
+            });
+        }
+    };
+    setupCopy('btn-modal-copy-acc', () => document.getElementById('modal-account-num')?.textContent?.trim() || '');
+    setupCopy('btn-modal-copy-amount', () => Number(currentAmount).toString());
+    setupCopy('btn-modal-copy-ref', () => 'STKT' + currentBookingCode);
+
+    // Nút giả lập Dev
+    if (modalDevBtn) {
+        modalDevBtn.addEventListener('click', async () => {
+            if (!currentBookingId) return;
+            modalDevBtn.disabled = true;
+            modalDevBtn.textContent = 'Đang kích hoạt vé mô phỏng...';
+            try {
+                const res = await fetch(`/account/bookings/${currentBookingId}/simulate-payment`, { method: 'POST' });
+                if (res.ok) {
+                    onPaymentSuccess();
+                } else {
+                    alert('Lỗi mô phỏng: ' + await res.text());
+                    modalDevBtn.disabled = false;
+                    modalDevBtn.textContent = '⚡ Giả lập thanh toán thành công (Môi trường Dev)';
+                }
+            } catch (err) {
+                alert('Lỗi: ' + err);
+                modalDevBtn.disabled = false;
+                modalDevBtn.textContent = '⚡ Giả lập thanh toán thành công (Môi trường Dev)';
+            }
+        });
+    }
+
+    // Kết nối SignalR
+    if (window.signalR) {
+        try {
+            signalRConn = new window.signalR.HubConnectionBuilder()
+                .withUrl('/hubs/trip-seats')
+                .withAutomaticReconnect()
+                .build();
+            signalRConn.on('PaymentSucceeded', (data) => {
+                if (data && data.bookingId === currentBookingId) {
+                    onPaymentSuccess();
+                }
+            });
+            signalRConn.start().catch(e => console.warn("SignalR start error:", e));
+        } catch (e) {
+            console.warn("SignalR init error:", e);
+        }
+    }
+})();
 </script>
 
 <style>
@@ -293,11 +665,15 @@ function switchTab(tabId, btn) {
     border-radius: 18px;
     padding: 22px 26px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
 }
 .booking-ticket-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+.card-dimmed-expired {
+    opacity: 0.6;
+    border-color: rgba(239, 68, 68, 0.35);
 }
 .card-top-row {
     display: flex;
@@ -322,7 +698,44 @@ function switchTab(tabId, btn) {
     border-radius: 8px;
     font-size: 11.5px;
     font-weight: 800;
+    transition: all 0.2s;
 }
+.badge-status-pending.critical {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+    animation: cardTimerPulse 1.2s infinite ease-in-out;
+}
+.badge-status-pending.expired {
+    background: rgba(107, 114, 128, 0.2) !important;
+    color: #9ca3af !important;
+    border-color: rgba(107, 114, 128, 0.4) !important;
+    animation: none !important;
+}
+@@keyframes cardTimerPulse {
+    0% { opacity: 0.85; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.02); }
+    100% { opacity: 0.85; transform: scale(1); }
+}
+.badge-status-warning {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.overdue-notice-box {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #fce4b8;
+}
+.overdue-notice-box strong { color: #fbbf24; }
 .badge-status-history {
     background: rgba(107, 114, 128, 0.18);
     color: #9ca3af;
@@ -376,8 +789,329 @@ function switchTab(tabId, btn) {
 .seat-chips { color: var(--gold, #e5a950); }
 .text-gold { color: var(--gold, #e5a950) !important; }
 .text-crimson { color: #f87171 !important; }
+
+/* Action bar cho pending card */
+.pending-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+}
+.ref-copy-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ref-code {
+    color: var(--gold, #e5a950);
+    font-family: monospace;
+    font-size: 13.5px;
+}
+.btn-copy-chip {
+    background: var(--pill-bg, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--pill-border, rgba(229, 169, 80, 0.35));
+    color: var(--ink, #fff);
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-copy-chip:hover {
+    background: var(--gold, #e5a950);
+    color: #1a1005;
+}
+.btn-copy-inline {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+.btn-resume-pay {
+    background: linear-gradient(135deg, #e5a950 0%, #b87b33 100%) !important;
+    color: #0b0805 !important;
+    border: 1px solid #fce4b8 !important;
+    font-weight: 850 !important;
+    font-size: 13.5px !important;
+    padding: 10px 20px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 18px rgba(229, 169, 80, 0.38) !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-resume-pay:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(229, 169, 80, 0.55) !important;
+    filter: brightness(1.12);
+}
+.btn-resume-pay:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* Modal VietQR Frosted Glass Styles */
+.qr-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 9, 6, 0.78);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    backdrop-filter: blur(18px) saturate(180%);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeInModal 0.25s ease-out;
+}
+@@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.qr-modal-card {
+    background: var(--glass-bg-solid, #140e08);
+    -webkit-backdrop-filter: blur(28px) saturate(190%);
+    backdrop-filter: blur(28px) saturate(190%);
+    border-radius: 24px;
+    border: 1px solid var(--pill-border, rgba(229, 169, 80, 0.35));
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 35px rgba(229, 169, 80, 0.15);
+    max-width: 660px;
+    width: 100%;
+    padding: 30px;
+    position: relative;
+    color: var(--ink, #fff);
+    animation: scaleUpModal 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@@keyframes scaleUpModal {
+    from { transform: scale(0.92); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+.btn-close-modal {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--line, rgba(255, 255, 255, 0.15)) !important;
+    color: var(--ink, #fff);
+    font-size: 15px;
+    font-weight: 850;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-close-modal:hover {
+    background: rgba(239, 68, 68, 0.35) !important;
+    border-color: rgba(239, 68, 68, 0.75) !important;
+    color: #ffffff !important;
+    transform: rotate(90deg) scale(1.08) !important;
+}
+.modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.modal-badge-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.badge-vietqr-brand {
+    background: rgba(229, 169, 80, 0.14);
+    color: var(--gold, #e5a950);
+    border: 1px solid rgba(229, 169, 80, 0.35);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+.badge-modal-timer {
+    background: rgba(217, 119, 6, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+.modal-title {
+    font-size: 21px;
+    font-weight: 850;
+    margin: 0 0 4px;
+    color: var(--ink, #fff);
+}
+.modal-subtitle {
+    font-size: 12.5px;
+    color: var(--muted, #9ca3af);
+    margin: 0;
+}
+.modal-body-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: center;
+}
+.modal-qr-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.modal-qr-frame {
+    background: #ffffff;
+    border: 2px solid var(--gold, #e5a950);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(229, 169, 80, 0.2);
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#modal-qr-image {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    display: block;
+}
+.modal-expired-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 9, 6, 0.94);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 14px;
+    text-align: center;
+}
+.modal-expired-overlay .expired-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+}
+.modal-expired-overlay h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #f87171;
+}
+.modal-expired-overlay p {
+    margin: 4px 0 0;
+    font-size: 11.5px;
+    color: var(--muted, #9ca3af);
+}
+.modal-lock-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    color: #10b981;
+    font-weight: 750;
+    margin-top: 8px;
+}
+.modal-specs-box {
+    background: var(--pill-bg, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--line, rgba(255, 255, 255, 0.1));
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.modal-spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12.5px;
+}
+.modal-spec-row .m-label {
+    color: var(--muted, #9ca3af);
+    font-weight: 600;
+}
+.modal-spec-row .m-val {
+    color: var(--ink, #fff);
+    font-weight: 750;
+}
+.modal-spec-row .m-val-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.font-mono { font-family: monospace; }
+.modal-status-badge {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 10px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.status-pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+    animation: modalPulse 1.6s infinite ease-in-out;
+    flex-shrink: 0;
+}
+@@keyframes modalPulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.status-text-content strong {
+    display: block;
+    font-size: 12.5px;
+    color: var(--ink, #fff);
+    font-weight: 750;
+}
+.status-text-content p {
+    font-size: 11.5px;
+    color: var(--muted, #9ca3af);
+    margin: 2px 0 0;
+}
+.modal-actions-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn-modal-dev {
+    background: rgba(229, 169, 80, 0.12);
+    color: var(--gold, #e5a950);
+    border: 1px solid rgba(229, 169, 80, 0.35);
+    padding: 9px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+.btn-modal-dev:hover {
+    background: rgba(229, 169, 80, 0.22);
+    border-color: var(--gold, #e5a950);
+}
+
 @@media (max-width: 800px) {
     .tickets-hero-banner { flex-direction: column; align-items: flex-start; gap: 14px; }
     .card-meta-row { grid-template-columns: 1fr 1fr; }
+    .modal-body-layout { grid-template-columns: 1fr; justify-items: center; }
+    .pending-actions-bar { flex-direction: column; align-items: stretch; }
+    .btn-resume-pay { justify-content: center; width: 100%; }
 }
 </style>

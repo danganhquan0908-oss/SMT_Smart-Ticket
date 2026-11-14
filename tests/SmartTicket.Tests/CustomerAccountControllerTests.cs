@@ -90,6 +90,90 @@ public sealed class CustomerAccountControllerTests
         Assert.IsType<NotFoundResult>(actionResult);
     }
 
+    [Fact]
+    public async Task GetPaymentDetails_WhenFoundAndValid_ReturnsOkWithDetails()
+    {
+        var userId = Guid.NewGuid();
+        var bookingId = Guid.NewGuid();
+        var fakeDetails = new CustomerPaymentDetailsDto(
+            bookingId, "BK123456", 320000m, "STKTBK123456",
+            "970415", "VietinBank", "103880262473", "DANG ANH QUAN",
+            "sample-qr-payload", "data:image/png;base64,abc",
+            "https://img.vietqr.io/image/sample", 300, "Pending");
+
+        var fakeService = new FakeCustomerAccountService([]) { DetailsResult = fakeDetails };
+        var controller = CreateController(fakeService, userId);
+
+        var actionResult = await controller.GetPaymentDetails(bookingId, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        var details = Assert.IsType<CustomerPaymentDetailsDto>(okResult.Value);
+        Assert.Equal(bookingId, details.BookingId);
+        Assert.Equal("STKTBK123456", details.Reference);
+        Assert.Equal(320000m, details.Amount);
+        Assert.Equal(300, details.SecondsRemaining);
+    }
+
+    [Fact]
+    public async Task GetPaymentDetails_WhenNotFound_ReturnsNotFound()
+    {
+        var userId = Guid.NewGuid();
+        var fakeService = new FakeCustomerAccountService([]) { DetailsResult = null };
+        var controller = CreateController(fakeService, userId);
+
+        var actionResult = await controller.GetPaymentDetails(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<NotFoundObjectResult>(actionResult);
+    }
+
+    [Fact]
+    public async Task GetPaymentDetails_WhenExpired_ReturnsConflict()
+    {
+        var userId = Guid.NewGuid();
+        var bookingId = Guid.NewGuid();
+        var expiredDetails = new CustomerPaymentDetailsDto(
+            bookingId, "BK123456", 320000m, "STKTBK123456",
+            "970415", "VietinBank", "103880262473", "DANG ANH QUAN",
+            null, null, "https://img.vietqr.io/image/sample", 0, "Expired");
+
+        var fakeService = new FakeCustomerAccountService([]) { DetailsResult = expiredDetails };
+        var controller = CreateController(fakeService, userId);
+
+        var actionResult = await controller.GetPaymentDetails(bookingId, CancellationToken.None);
+
+        Assert.IsType<ConflictObjectResult>(actionResult);
+    }
+
+    [Fact]
+    public async Task GetPaymentState_WhenFound_ReturnsOkWithState()
+    {
+        var userId = Guid.NewGuid();
+        var bookingId = Guid.NewGuid();
+        var fakeState = new CustomerPaymentStateDto("Paid", true, false, DateTime.UtcNow);
+
+        var fakeService = new FakeCustomerAccountService([]) { StateResult = fakeState };
+        var controller = CreateController(fakeService, userId);
+
+        var actionResult = await controller.GetPaymentState(bookingId, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(actionResult);
+        var state = Assert.IsType<CustomerPaymentStateDto>(okResult.Value);
+        Assert.True(state.IsPaid);
+        Assert.Equal("Paid", state.Status);
+    }
+
+    [Fact]
+    public async Task GetPaymentState_WhenNotFound_ReturnsNotFound()
+    {
+        var userId = Guid.NewGuid();
+        var fakeService = new FakeCustomerAccountService([]) { StateResult = null };
+        var controller = CreateController(fakeService, userId);
+
+        var actionResult = await controller.GetPaymentState(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<NotFoundObjectResult>(actionResult);
+    }
+
     private static AccountController CreateController(ICustomerAccountService customerAccount, Guid userId)
     {
         var userStore = new FakeUserStore();
@@ -124,6 +208,9 @@ public sealed class CustomerAccountControllerTests
 
     private sealed class FakeCustomerAccountService(IReadOnlyList<CustomerBookingSummaryDto> bookings) : ICustomerAccountService
     {
+        public CustomerPaymentDetailsDto? DetailsResult { get; set; }
+        public CustomerPaymentStateDto? StateResult { get; set; }
+
         public Task<CustomerProfileDto?> GetProfileAsync(Guid userId, CancellationToken ct = default) =>
             Task.FromResult<CustomerProfileDto?>(new CustomerProfileDto(userId, "Đặng Anh Quân", "khachhang@smartticket.vn", "0345588495"));
 
@@ -132,6 +219,12 @@ public sealed class CustomerAccountControllerTests
 
         public Task<CustomerBookingSummaryDto?> GetBookingDetailsAsync(Guid userId, Guid bookingId, CancellationToken ct = default) =>
             Task.FromResult(bookings.FirstOrDefault(x => x.BookingId == bookingId));
+
+        public Task<CustomerPaymentDetailsDto?> GetPaymentDetailsAsync(Guid userId, Guid bookingId, CancellationToken ct = default) =>
+            Task.FromResult(DetailsResult);
+
+        public Task<CustomerPaymentStateDto?> GetPaymentStateAsync(Guid userId, Guid bookingId, CancellationToken ct = default) =>
+            Task.FromResult(StateResult);
     }
 
     private sealed class FakeTempDataProvider : ITempDataProvider

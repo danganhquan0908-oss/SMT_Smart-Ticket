@@ -2,9 +2,15 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using QRCoder;
 using SmartTicket.Application.Account;
+using SmartTicket.Application.Payments;
+using SmartTicket.Domain.Entities;
+using SmartTicket.Infrastructure.Payments;
 using SmartTicket.Infrastructure.Persistence;
+using SmartTicket.Web.Hubs;
 using SmartTicket.Web.Models;
 
 namespace SmartTicket.Web.Controllers;
@@ -14,7 +20,12 @@ public sealed class AccountController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole<Guid>> roleManager,
-    ICustomerAccountService customerAccount) : Controller
+    ICustomerAccountService customerAccount,
+    SmartTicketDbContext? db = null,
+    IPaymentService? payments = null,
+    IConfiguration? configuration = null,
+    IHostEnvironment? environment = null,
+    IHubContext<TripSeatsHub>? hub = null) : Controller
 {
     [HttpGet("login")]
     public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
@@ -235,12 +246,106 @@ public sealed class AccountController(
         var pending = bookings.Where(b => b.Status == "Pending" && b.ExpiresAtUtc > now).ToList();
         var history = bookings.Where(b => !(b.Status == "Paid" && b.DepartureTimeUtc > now) && !(b.Status == "Pending" && b.ExpiresAtUtc > now)).ToList();
 
+        ViewBag.BankBin = configuration?["Payments:BankBin"] ?? "970415";
+        ViewBag.BankName = configuration?["Payments:BankName"] ?? "VietinBank";
+        ViewBag.AccountNumber = configuration?["Payments:AccountNumber"] ?? "103880262473";
+        ViewBag.AccountName = configuration?["Payments:AccountName"] ?? "DANG ANH QUAN";
+        ViewBag.IsDev = environment?.IsDevelopment() ?? false;
+
         return View(new CustomerTicketsViewModel
         {
             Upcoming = upcoming,
             Pending = pending,
             History = history
         });
+    }
+
+    [HttpGet("bookings/{bookingId:guid}/payment-details"), Authorize]
+    public async Task<IActionResult> GetPaymentDetails(Guid bookingId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Challenge();
+
+        var details = await customerAccount.GetPaymentDetailsAsync(userId, bookingId, ct);
+        if (details is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
+
+        if (details.Status == "Expired" || details.SecondsRemaining <= 0)
+        {
+            return Conflict(new { status = "Expired", message = "Thời gian giữ chỗ 7 phút đã hết hoặc booking không còn chờ thanh toán." });
+        }
+
+        string? qrImage = details.QrImage;
+        if (string.IsNullOrWhiteSpace(qrImage) && !string.IsNullOrWhiteSpace(details.QrPayload))
+        {
+            try
+            {
+                using var generator = new QRCodeGenerator();
+                using var data = generator.CreateQrCode(details.QrPayload, QRCodeGenerator.ECCLevel.Q);
+                var png = new PngByteQRCode(data).GetGraphic(12);
+                qrImage = "data:image/png;base64," + Convert.ToBase64String(png);
+            }
+            catch
+            {
+                // fallback
+            }
+        }
+
+        return Ok(details with { QrImage = qrImage });
+    }
+
+    [HttpGet("bookings/{bookingId:guid}/payment-state"), Authorize]
+    public async Task<IActionResult> GetPaymentState(Guid bookingId, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Challenge();
+
+        var state = await customerAccount.GetPaymentStateAsync(userId, bookingId, ct);
+        if (state is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
+
+        return Ok(state);
+    }
+
+    [HttpPost("bookings/{bookingId:guid}/simulate-payment"), Authorize]
+    public async Task<IActionResult> SimulatePayment(Guid bookingId, CancellationToken ct)
+    {
+        if (environment is not null && !environment.IsDevelopment()) return NotFound();
+
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Challenge();
+        if (db is null || payments is null) return StatusCode(500, "Service unavailable.");
+
+        var booking = await db.Bookings.SingleOrDefaultAsync(x => x.Id == bookingId && x.CustomerUserId == userId, ct);
+        if (booking is null) return NotFound(new { error = "Không tìm thấy thông tin lượt đặt chỗ." });
+
+        if (booking.Status != BookingStatus.Pending)
+        {
+            return BadRequest(new { error = "Lượt đặt chỗ không còn ở trạng thái chờ thanh toán." });
+        }
+
+        var reference = "STKT" + booking.BookingCode;
+        var payment = await db.Payments.SingleOrDefaultAsync(x => x.BookingId == booking.Id, ct);
+        if (payment is null)
+        {
+            payment = new Payment(booking.Id, reference, booking.TotalAmount);
+            db.Payments.Add(payment);
+            await db.SaveChangesAsync(ct);
+        }
+
+        var fakeTxId = "DEV_TX_" + Guid.NewGuid().ToString("N")[..10].ToUpperInvariant();
+        var payload = new PaymentWebhookPayload(reference, fakeTxId, booking.TotalAmount, "SUCCESS");
+        var rawJson = System.Text.Json.JsonSerializer.Serialize(payload);
+
+        var result = await payments.ProcessWebhookAsync(payload, rawJson, ct);
+        if (hub is not null)
+        {
+            if (result.TripId.HasValue && result.SeatCodes is not null)
+            {
+                await hub.Clients.Group(TripSeatsHub.Group(result.TripId.Value)).SendAsync("SeatsChanged", new { seatCodes = result.SeatCodes, status = "Booked" }, ct);
+            }
+            await hub.Clients.Group(TripSeatsHub.GroupForBooking(booking.Id)).SendAsync("PaymentSucceeded", new { bookingId = booking.Id, bookingCode = booking.BookingCode }, ct);
+        }
+
+        return Ok(new { success = true, result.Processed, result.Result, redirectUrl = "/account/tickets" });
     }
 
     [HttpGet("tickets/{bookingId:guid}"), Authorize]

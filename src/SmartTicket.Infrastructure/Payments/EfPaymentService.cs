@@ -115,7 +115,7 @@ public sealed class EfPaymentService(SmartTicketDbContext db, IConfiguration con
             booking.MarkPaidOverdueUnassigned();
             payment.MarkOverdue(payload.TransactionId, rawPayload);
             await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
-            return new WebhookProcessResult(true, "paid_overdue_unassigned");
+            return new WebhookProcessResult(true, "paid_overdue_unassigned", booking.TripId, bookingSeats.Select(x => x.SeatCode).ToArray(), booking.Id, booking.BookingCode);
         }
 
         foreach (var seat in seats)
@@ -131,7 +131,7 @@ public sealed class EfPaymentService(SmartTicketDbContext db, IConfiguration con
             db.TripTickets.Add(new TripTicket(booking.TripId, booking.Id, item.SeatId, item.SeatCode, item.PriceAtPurchase, CreateCheckInJwt(booking, item, trip)));
         payment.MarkSucceeded(payload.TransactionId, rawPayload);
         await db.SaveChangesAsync(ct); await tx.CommitAsync(ct);
-            return new WebhookProcessResult(true, "paid_and_tickets_issued", booking.TripId, bookingSeats.Select(x => x.SeatCode).ToArray());
+        return new WebhookProcessResult(true, "paid_and_tickets_issued", booking.TripId, bookingSeats.Select(x => x.SeatCode).ToArray(), booking.Id, booking.BookingCode);
     }
 
     private Task<Booking?> FindBookingAsync(string token, CancellationToken ct)

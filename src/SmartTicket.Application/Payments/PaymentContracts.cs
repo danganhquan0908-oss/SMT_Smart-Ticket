@@ -5,7 +5,7 @@ public sealed record PaymentStateDto(string Status, DateTime? PaidAtUtc, string?
 public sealed record TicketDto(string TicketNumber, string PassengerName, string Trip, string SeatCode, DateTime DepartureTimeUtc, decimal Price, string CheckInJwt);
 public sealed record TicketLookupDto(string BookingCode, string BookingStatus, IReadOnlyList<TicketDto> Tickets);
 public sealed record PaymentWebhookPayload(string Reference, string TransactionId, decimal Amount, string Status);
-public sealed record WebhookProcessResult(bool Processed, string Result, Guid? TripId = null, IReadOnlyList<string>? SeatCodes = null);
+public sealed record WebhookProcessResult(bool Processed, string Result, Guid? TripId = null, IReadOnlyList<string>? SeatCodes = null, Guid? BookingId = null, string? BookingCode = null);
 public interface IPaymentService
 {
     Task<PaymentCheckoutDto> CreateCheckoutAsync(string lookupToken, CancellationToken ct);

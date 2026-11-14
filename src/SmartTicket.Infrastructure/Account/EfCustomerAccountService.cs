@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SmartTicket.Application.Account;
+using SmartTicket.Domain.Entities;
+using SmartTicket.Infrastructure.Payments;
 using SmartTicket.Infrastructure.Persistence;
 
 namespace SmartTicket.Infrastructure.Account;
 
-public sealed class EfCustomerAccountService(SmartTicketDbContext db) : ICustomerAccountService
+public sealed class EfCustomerAccountService(SmartTicketDbContext db, IConfiguration? configuration = null) : ICustomerAccountService
 {
     public async Task<CustomerProfileDto?> GetProfileAsync(Guid userId, CancellationToken ct = default)
     {
@@ -111,5 +114,64 @@ public sealed class EfCustomerAccountService(SmartTicketDbContext db) : ICustome
             b.Trip?.DepartureTimeUtc ?? DateTime.UtcNow,
             b.Seats.Select(s => s.SeatCode).OrderBy(x => x).ToList(),
             tickets);
+    }
+
+    public async Task<CustomerPaymentDetailsDto?> GetPaymentDetailsAsync(Guid userId, Guid bookingId, CancellationToken ct = default)
+    {
+        var booking = await db.Bookings.AsNoTracking().SingleOrDefaultAsync(x => x.Id == bookingId && x.CustomerUserId == userId, ct);
+        if (booking is null) return null;
+
+        var secondsRemaining = (int)Math.Max(0, (booking.ExpiresAtUtc - DateTime.UtcNow).TotalSeconds);
+        var isExpired = booking.Status != BookingStatus.Pending || secondsRemaining <= 0;
+
+        var bankBin = configuration?["Payments:BankBin"] ?? "970415";
+        var bankName = configuration?["Payments:BankName"] ?? "VietinBank";
+        var accountNumber = configuration?["Payments:AccountNumber"] ?? "103880262473";
+        var accountName = configuration?["Payments:AccountName"] ?? "DANG ANH QUAN";
+        var reference = "STKT" + booking.BookingCode;
+
+        string? qrPayload = null;
+        if (!isExpired)
+        {
+            try
+            {
+                qrPayload = NapasQrPayloadBuilder.Build(bankBin, accountNumber, accountName, booking.TotalAmount, reference);
+            }
+            catch
+            {
+                // fallback
+            }
+        }
+
+        var amountFormatted = booking.TotalAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var vietQrUrl = $"https://img.vietqr.io/image/{bankBin}-{accountNumber}-compact2.png?amount={amountFormatted}&addInfo={Uri.EscapeDataString(reference)}&accountName={Uri.EscapeDataString(accountName)}";
+
+        return new CustomerPaymentDetailsDto(
+            booking.Id,
+            booking.BookingCode,
+            booking.TotalAmount,
+            reference,
+            bankBin,
+            bankName,
+            accountNumber,
+            accountName,
+            qrPayload,
+            null,
+            vietQrUrl,
+            secondsRemaining,
+            isExpired ? "Expired" : booking.Status.ToString());
+    }
+
+    public async Task<CustomerPaymentStateDto?> GetPaymentStateAsync(Guid userId, Guid bookingId, CancellationToken ct = default)
+    {
+        var booking = await db.Bookings.AsNoTracking().SingleOrDefaultAsync(x => x.Id == bookingId && x.CustomerUserId == userId, ct);
+        if (booking is null) return null;
+
+        var payment = await db.Payments.AsNoTracking().SingleOrDefaultAsync(x => x.BookingId == bookingId, ct);
+        var isPaid = booking.Status == BookingStatus.Paid || payment?.Status == PaymentStatus.Succeeded;
+        var isExpired = booking.Status == BookingStatus.Expired || (booking.Status == BookingStatus.Pending && booking.ExpiresAtUtc <= DateTime.UtcNow);
+        var status = isPaid ? "Paid" : (isExpired ? "Expired" : (payment?.Status.ToString() ?? booking.Status.ToString()));
+
+        return new CustomerPaymentStateDto(status, isPaid, isExpired, payment?.CompletedAtUtc);
     }
 }

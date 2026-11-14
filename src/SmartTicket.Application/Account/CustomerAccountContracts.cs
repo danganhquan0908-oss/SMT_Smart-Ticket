@@ -31,9 +31,32 @@ public sealed record CustomerBookingSummaryDto(
     IReadOnlyList<CustomerTicketDto> Tickets,
     string? LookupToken = null);
 
+public sealed record CustomerPaymentDetailsDto(
+    Guid BookingId,
+    string BookingCode,
+    decimal Amount,
+    string Reference,
+    string BankBin,
+    string BankName,
+    string AccountNumber,
+    string AccountName,
+    string? QrPayload,
+    string? QrImage,
+    string VietQrUrl,
+    int SecondsRemaining,
+    string Status);
+
+public sealed record CustomerPaymentStateDto(
+    string Status,
+    bool IsPaid,
+    bool IsExpired,
+    DateTime? CompletedAtUtc);
+
 public interface ICustomerAccountService
 {
     Task<CustomerProfileDto?> GetProfileAsync(Guid userId, CancellationToken ct = default);
     Task<IReadOnlyList<CustomerBookingSummaryDto>> GetBookingsAsync(Guid userId, CancellationToken ct = default);
     Task<CustomerBookingSummaryDto?> GetBookingDetailsAsync(Guid userId, Guid bookingId, CancellationToken ct = default);
+    Task<CustomerPaymentDetailsDto?> GetPaymentDetailsAsync(Guid userId, Guid bookingId, CancellationToken ct = default);
+    Task<CustomerPaymentStateDto?> GetPaymentStateAsync(Guid userId, Guid bookingId, CancellationToken ct = default);
 }
