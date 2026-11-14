@@ -1,0 +1,213 @@
+@model BusGoSmartTicket.Models.ViewModels.OperatorRegistrationForm
+@{
+    ViewData["Title"] = "Đăng ký Đối tác Nhà xe - Smart Ticket";
+}
+
+<div class="operator-register-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">ĐỐI TÁC SMART TICKET</p>
+            <h1>Đăng ký mở tài khoản Nhà xe</h1>
+            <p>Gia nhập mạng lưới vận tải số BusGo SmartTicket để tiếp cận hàng triệu hành khách toàn quốc.</p>
+        </div>
+        <a class="button button-outline" asp-controller="Home" asp-action="Index">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Về trang chủ
+        </a>
+    </div>
+
+    <!-- ONBOARDING PROGRESSION PIPELINE -->
+    <div class="onboarding-steps-container">
+        <div class="onboarding-step-card active">
+            <div class="step-num-badge">01</div>
+            <div class="step-content">
+                <strong>Nộp hồ sơ pháp lý</strong>
+                <p>Khai báo MST, hotline và giấy phép kinh doanh</p>
+            </div>
+            <span class="step-status-tag">Đang thực hiện</span>
+        </div>
+        <div class="onboarding-step-arrow">→</div>
+        <div class="onboarding-step-card">
+            <div class="step-num-badge">02</div>
+            <div class="step-content">
+                <strong>Thẩm định 24h</strong>
+                <p>Đội ngũ Smart Ticket kiểm tra hồ sơ hợp lệ</p>
+            </div>
+            <span class="step-status-tag waiting">Chờ thẩm định</span>
+        </div>
+        <div class="onboarding-step-arrow">→</div>
+        <div class="onboarding-step-card">
+            <div class="step-num-badge">03</div>
+            <div class="step-content">
+                <strong>Kích hoạt & 2FA</strong>
+                <p>Nhận email kích hoạt, tạo mật khẩu & bật bảo mật</p>
+            </div>
+            <span class="step-status-tag">Bảo mật</span>
+        </div>
+        <div class="onboarding-step-arrow">→</div>
+        <div class="onboarding-step-card">
+            <div class="step-num-badge">04</div>
+            <div class="step-content">
+                <strong>Vận hành & Bán vé</strong>
+                <p>Khai báo sơ đồ xe, chuyến chạy và niêm yết vé</p>
+            </div>
+            <span class="step-status-tag">Sẵn sàng</span>
+        </div>
+    </div>
+
+    <div class="register-layout-grid">
+        <!-- FORM CARD -->
+        <div class="form-card register-main-card">
+            <div class="form-header-bar">
+                <div class="brand-sub-badge">SMT PARTNER</div>
+                <h2>Thông tin hồ sơ doanh nghiệp</h2>
+                <p class="muted">Vui lòng nhập thông tin chính xác theo giấy phép đăng ký kinh doanh vận tải hành khách.</p>
+            </div>
+
+            <form asp-action="Register" method="post" enctype="multipart/form-data" id="operatorRegisterForm">
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+                <div class="form-grid">
+                    <!-- TÊN DOANH NGHIỆP -->
+                    <div class="field field-full">
+                        <label asp-for="CompanyName">
+                            Tên doanh nghiệp / Nhà xe <span class="required">*</span>
+                        </label>
+                        <input asp-for="CompanyName" class="form-input" placeholder="Ví dụ: Công ty TNHH Vận Tải Hành Khách Phương Trang" required />
+                        <span asp-validation-for="CompanyName" class="field-error"></span>
+                        <small class="field-help">Tên nhà xe hiển thị với hành khách khi tìm kiếm chuyến và trên vé điện tử.</small>
+                    </div>
+
+                    <!-- MÃ SỐ THUẾ -->
+                    <div class="field">
+                        <label asp-for="TaxCode">
+                            Mã số thuế doanh nghiệp <span class="required">*</span>
+                        </label>
+                        <input asp-for="TaxCode" class="form-input" placeholder="Ví dụ: 0301234567" required maxlength="20" />
+                        <span asp-validation-for="TaxCode" class="field-error"></span>
+                        <small class="field-help">Dùng để xác thực pháp nhân và đối soát thuế.</small>
+                    </div>
+
+                    <!-- HOTLINE -->
+                    <div class="field">
+                        <label asp-for="Hotline">
+                            Số điện thoại Hotline nhà xe <span class="required">*</span>
+                        </label>
+                        <input asp-for="Hotline" type="tel" class="form-input" placeholder="Ví dụ: 1900 6067 hoặc 028 3838 6868" required />
+                        <span asp-validation-for="Hotline" class="field-error"></span>
+                        <small class="field-help">Số đường dây nóng để hành khách liên hệ khi cần hỗ trợ lên xe.</small>
+                    </div>
+
+                    <!-- EMAIL ĐẠI DIỆN -->
+                    <div class="field field-full">
+                        <label asp-for="Email">
+                            Email người đại diện pháp luật <span class="required">*</span>
+                        </label>
+                        <input asp-for="Email" type="email" autocomplete="email" class="form-input" placeholder="dieuhanh@nhaxe.vn" required />
+                        <span asp-validation-for="Email" class="field-error"></span>
+                        <small class="field-help">Liên kết kích hoạt tài khoản Quản trị nhà xe sẽ được gửi về địa chỉ email này.</small>
+                    </div>
+
+                    <!-- GIẤY PHÉP KINH DOANH -->
+                    <div class="field field-full">
+                        <label asp-for="BusinessLicense">
+                            Giấy phép kinh doanh vận tải (PDF / JPG / PNG) <span class="required">*</span>
+                        </label>
+                        <div class="file-upload-dropzone" id="dropzoneContainer">
+                            <input asp-for="BusinessLicense" type="file" accept=".pdf,.jpg,.jpeg,.png" id="licenseFileInput" required />
+                            <div class="dropzone-content">
+                                <div class="dropzone-icon">
+                                    <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                    </svg>
+                                </div>
+                                <div class="dropzone-text">
+                                    <strong id="dropzoneLabel">Nhấp để chọn tệp hoặc kéo thả giấy phép vào đây</strong>
+                                    <span>Chấp nhận PDF, JPG, JPEG hoặc PNG · Dung lượng tối đa 10 MB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <span asp-validation-for="BusinessLicense" class="field-error"></span>
+                    </div>
+                </div>
+
+                <div class="security-assurance-box">
+                    <svg width="22" height="22" fill="none" stroke="#16825d" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <div>
+                        <strong>Cam kết bảo mật & lưu trữ an toàn</strong>
+                        <p>Tệp giấy phép kinh doanh được mã hóa và lưu trữ tại kho riêng tư (Private License Store), chỉ phục vụ việc thẩm định pháp lý và không bao giờ chia sẻ cho bên thứ ba.</p>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <a class="button button-outline" asp-controller="Home" asp-action="Index">Hủy bỏ</a>
+                    <button class="button button-primary" type="submit" id="btnSubmit">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                        Gửi hồ sơ thẩm định
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT SIDEBAR / BENEFIT CARD -->
+        <div class="register-sidebar">
+            <div class="benefit-card">
+                <h3>Đặc quyền Đối tác Smart Ticket</h3>
+                <ul class="benefit-list">
+                    <li>
+                        <div class="b-icon">✓</div>
+                        <div>
+                            <strong>Bán vé tự động không giới hạn</strong>
+                            <p>Sơ đồ 2 tầng, cập nhật chỗ trống và giữ ghế trong 7 phút khi xác nhận đặt vé.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="b-icon">✓</div>
+                        <div>
+                            <strong>VietQR Pro khóa số tiền tự động</strong>
+                            <p>Khách quét mã thanh toán ngay, số tiền và nội dung chuyển khoản được khóa chặt, ngăn lỗi thiếu/thừa.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="b-icon">✓</div>
+                        <div>
+                            <strong>Toàn quyền điều chỉnh giá vé</strong>
+                            <p>Thay đổi linh hoạt theo mùa vụ, tự động lưu lịch sử Audit Log minh bạch.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="b-icon">✓</div>
+                        <div>
+                            <strong>Đối soát doanh thu hàng ngày</strong>
+                            <p>Báo cáo dòng tiền, lệnh đối soát chuẩn xác, kết nối trực tiếp với trạm xuất bến.</p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="sidebar-support-box">
+                    <span class="support-title">Cần trợ giúp hồ sơ?</span>
+                    <p>Bộ phận hỗ trợ đối tác Smart Ticket sẵn sàng đồng hành 24/7:</p>
+                    <a href="tel:1900888666" class="support-phone">📞 1900 888 666</a>
+                    <span class="support-email">support@smartticket.vn</span>
+                </div>
+            </div>
+
+            <div class="already-registered-card">
+                <p>Doanh nghiệp của bạn đã có tài khoản?</p>
+                <a class="button button-light" asp-controller="Account" asp-action="Login">Đăng nhập tài khoản nhà xe →</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+<script src="~/js/pages/operators-register.js" asp-append-version="true"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/operators-register.css" asp-append-version="true" />
+}

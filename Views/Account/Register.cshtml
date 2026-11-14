@@ -1,0 +1,28 @@
+@model BusGoSmartTicket.Models.ViewModels.PassengerRegistrationViewModel
+@{ ViewData["Title"] = "Đăng ký hành khách"; }
+<section class="login-shell">
+    <aside class="login-brand-panel">
+        <div class="login-logo-frame"><img src="~/images/favicon.svg" alt="Logo BusGo SmartTicket" asp-append-version="true" /></div>
+        <p class="eyebrow">SMART TICKET - SMT</p>
+        <h2>Hành trình mới<br /><em>bắt đầu từ đây.</em></h2>
+        <p class="login-brand-copy">Đăng ký tài khoản hành khách để bắt đầu sử dụng Smart Ticket.</p>
+        <div class="login-brand-footer"><span>ĐẶT VÉ · CHỌN GHẾ · LÊN ĐƯỜNG</span><span class="login-foil-line"></span></div>
+    </aside>
+    <div class="login-card">
+        <div class="login-mobile-brand"><img src="~/images/favicon.svg" alt="" asp-append-version="true" /><strong>BusGo SmartTicket</strong></div>
+        <p class="eyebrow">TÀI KHOẢN HÀNH KHÁCH</p>
+        <h1>Tạo tài khoản</h1>
+        <p class="muted">Đăng ký miễn phí để bắt đầu đặt vé.</p>
+        <form asp-action="Register" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post" class="form-stack">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <label asp-for="FullName">Họ và tên hành khách</label><input asp-for="FullName" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A" /><span asp-validation-for="FullName" class="field-error"></span>
+            <label asp-for="Email"></label><input asp-for="Email" autocomplete="email" placeholder="email@example.com" /><span asp-validation-for="Email" class="field-error"></span>
+            <label asp-for="PhoneNumber"></label><input asp-for="PhoneNumber" autocomplete="tel" placeholder="09xx xxx xxx" /><span asp-validation-for="PhoneNumber" class="field-error"></span>
+            <label asp-for="Password">Mật khẩu</label><input asp-for="Password" autocomplete="new-password" placeholder="Ít nhất 12 ký tự" /><span asp-validation-for="Password" class="field-error"></span>
+            <label asp-for="ConfirmPassword"></label><input asp-for="ConfirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu" /><span asp-validation-for="ConfirmPassword" class="field-error"></span>
+            <button class="button button-primary button-wide" type="submit">Tạo tài khoản <span aria-hidden="true">↗</span></button>
+        </form>
+        <p class="register-note">Đã có tài khoản? <a asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl">Đăng nhập</a></p>
+    </div>
+</section>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

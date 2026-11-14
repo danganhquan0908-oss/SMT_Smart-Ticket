@@ -1,0 +1,16 @@
+@using BusGoSmartTicket.Models.Entities
+@model BusGoSmartTicket.Models.DTOs.Account.MembershipOverview
+@{ ViewData["Title"] = "Hội viên & ưu đãi"; }
+<div class="page-heading"><div><h1>Hội viên của bạn</h1><p>Quyền lợi tính trên số tiền vé đã thanh toán thành công.</p></div><a class="button button-outline" href="/account/tickets">Vé của tôi</a></div>
+<section class="member-summary">
+    <div><span>Hạng hiện tại</span><h2>@MembershipPolicy.Label(Model.Tier)</h2><p>Chi tiêu hợp lệ: <strong>@Model.NetSpend.ToString("N0") ₫</strong></p></div>
+    <div><span>Cột mốc tiếp theo</span><h2>@(Model.NextThreshold > 0 ? Model.NextThreshold.ToString("N0") + " ₫" : "Hạng cao nhất")</h2>
+    @if(Model.NextThreshold > 0){<p>Còn @((Model.NextThreshold - Model.NetSpend).ToString("N0")) ₫ để lên hạng.</p><progress value="@Model.NetSpend" max="@Model.NextThreshold"></progress>}</div>
+</section>
+<h2 class="section-title">Ưu đãi dành cho bạn</h2>
+<p>Ưu đãi tốt nhất được áp dụng khi giữ ghế. Mức giá đã chốt được giữ nguyên cho lượt đặt vé đó.</p>
+@if(Model.Offers.Count == 0){<div class="empty-state">Chưa có ưu đãi cho hạng hiện tại. Bạn vẫn có thể đặt vé với giá niêm yết.</div>}
+<div class="offer-grid">@foreach(var offer in Model.Offers){<article class="form-card offer-card"><h3>@offer.Name</h3><strong>Giảm @offer.Percent.ToString("0.##")%</strong><p>@offer.StartsAtUtc.AddHours(7).ToString("dd/MM HH:mm") – @offer.EndsAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</p></article>}</div>
+<h2 class="section-title">Thông báo</h2>
+@if(Model.Notifications.Count == 0){<p>Bạn chưa có thông báo ưu đãi.</p>}
+@foreach(var notice in Model.Notifications){<article class="notice-row"><div><strong>@notice.Campaign!.Name</strong><p>Giảm @notice.Campaign.Percent.ToString("0.##")% · @(notice.Campaign.IsActive && notice.Campaign.EndsAtUtc > DateTime.UtcNow ? "Còn hiệu lực" : "Đã kết thúc")</p></div>@if(notice.ReadAtUtc is null){<form method="post" action="/membership/notifications/@notice.Id/read">@Html.AntiForgeryToken()<button class="button button-outline">Đánh dấu đã đọc</button></form>}else{<span>Đã đọc</span>}</article>}

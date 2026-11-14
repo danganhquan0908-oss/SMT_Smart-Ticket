@@ -1,0 +1,207 @@
+@model BusGoSmartTicket.Models.ViewModels.CustomerTicketsViewModel
+@{
+    ViewData["Title"] = "Vé của tôi - Smart Ticket";
+}
+
+<div class="tickets-page-shell">
+    <div class="tickets-hero-banner">
+        <div>
+            <span class="eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
+            <h1>Vé xe của tôi</h1>
+            <p class="muted">Toàn bộ vé xe điện tử và lịch sử đặt chỗ của bạn được lưu trữ an toàn tại đây.</p>
+        </div>
+        <div class="tickets-hero-actions">
+            <a class="button button-outline" asp-controller="Account" asp-action="Profile">
+                👤 Cập nhật hồ sơ
+            </a>
+            <a class="button button-primary" asp-controller="Home" asp-action="Index">
+                🔍 Tìm chuyến xe mới →
+            </a>
+        </div>
+    </div>
+
+    <!-- TABS ĐIỀU HƯỚNG TRẠNG THÁI VÉ -->
+    <div class="tickets-tabs-nav" role="tablist">
+        <button type="button" class="tab-pill active" onclick="switchTab('upcoming', this)">
+            🚌 Sắp khởi hành <span class="tab-badge">@Model.Upcoming.Count</span>
+        </button>
+        <button type="button" class="tab-pill" onclick="switchTab('pending', this)">
+            ⏱️ Chờ thanh toán <span class="tab-badge badge-amber">@Model.Pending.Count</span>
+        </button>
+        <button type="button" class="tab-pill" onclick="switchTab('history', this)">
+            📜 Lịch sử chuyến đi <span class="tab-badge badge-muted">@Model.History.Count</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: SẮP KHỞI HÀNH -->
+    <div id="tab-upcoming" class="tab-pane active">
+        @if (Model.Upcoming.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">🎟️</div>
+                <h3>Bạn chưa có vé xe nào sắp khởi hành</h3>
+                <p class="muted">Hãy đặt chuyến xe mới để trải nghiệm dịch vụ xe khách chất lượng cao liên tỉnh.</p>
+                <a class="button button-primary mt-2" asp-controller="Home" asp-action="Index">Đặt vé ngay bây giờ</a>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.Upcoming)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    <div class="booking-ticket-card">
+                        <div class="card-top-row">
+                            <span class="badge-status-paid">✓ ĐÃ THANH TOÁN</span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <strong class="m-val text-gold">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Nhà xe:</span>
+                                <strong class="m-val">@b.OperatorName</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế đã đặt:</span>
+                                <strong class="m-val seat-chips">@string.Join(", ", b.SeatCodes)</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền:</span>
+                                <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
+                            </div>
+                        </div>
+                        <div class="card-action-bar">
+                            <a class="button button-primary button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                                📱 Xem vé & Mã QR lên xe
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 2: CHỜ THANH TOÁN -->
+    <div id="tab-pending" class="tab-pane" style="display: none;">
+        @if (Model.Pending.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">✓</div>
+                <h3>Không có đơn đặt chỗ nào đang chờ thanh toán</h3>
+                <p class="muted">Tất cả các đơn đặt vé của bạn đều đã được hoàn tất hoặc giải phóng ghế an toàn.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.Pending)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    <div class="booking-ticket-card card-pending">
+                        <div class="card-top-row">
+                            <span class="badge-status-pending">⏱️ ĐANG GIỮ CHỖ (7 PHÚT)</span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <strong class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế giữ chỗ:</span>
+                                <strong class="m-val">@string.Join(", ", b.SeatCodes)</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền cần CK:</span>
+                                <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
+                            </div>
+                        </div>
+                        <div class="card-action-bar">
+                            <span class="text-muted small">Quét mã QR thanh toán bằng app ngân hàng với nội dung: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- TAB 3: LỊCH SỬ CHUYẾN ĐI -->
+    <div id="tab-history" class="tab-pane" style="display: none;">
+        @if (Model.History.Count == 0)
+        {
+            <div class="empty-bookings-box">
+                <div class="empty-icon">📜</div>
+                <h3>Chưa có lịch sử chuyến đi cũ</h3>
+                <p class="muted">Các chuyến xe đã hoàn thành hoặc hết hạn sẽ được lưu trữ tại đây.</p>
+            </div>
+        }
+        else
+        {
+            <div class="bookings-grid">
+                @foreach (var b in Model.History)
+                {
+                    var depLocal = b.DepartureTimeUtc.AddHours(7);
+                    var isPaid = b.Status == "Paid";
+                    <div class="booking-ticket-card card-history">
+                        <div class="card-top-row">
+                            <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")">
+                                @(isPaid ? "✓ ĐÃ HOÀN THÀNH" : "✕ ĐÃ HẾT HẠN")
+                            </span>
+                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                        </div>
+                        <div class="card-route-title">
+                            <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
+                        </div>
+                        <div class="card-meta-row">
+                            <div class="meta-item">
+                                <span class="m-label">Khởi hành:</span>
+                                <span class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Nhà xe:</span>
+                                <span class="m-val">@b.OperatorName</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Ghế:</span>
+                                <span class="m-val">@string.Join(", ", b.SeatCodes)</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="m-label">Tổng tiền:</span>
+                                <span class="m-val">@b.TotalAmount.ToString("N0") ₫</span>
+                            </div>
+                        </div>
+                        @if (isPaid && b.Tickets.Count > 0)
+                        {
+                            <div class="card-action-bar">
+                                <a class="button button-outline button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                                    Xem lại vé điện tử & In PDF
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/account-tickets.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/account-tickets.js" asp-append-version="true"></script>
+}

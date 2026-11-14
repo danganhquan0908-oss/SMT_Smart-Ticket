@@ -1,0 +1,145 @@
+@model BusGoSmartTicket.Models.ViewModels.PaymentCheckoutViewModel
+@{
+    ViewData["Title"] = "Thanh toán VietQR - Smart Ticket";
+    var qrBase64 = Model.QrImage as string;
+    var bankBin = Model.Bank.Bin as string ?? "";
+    var accountNumber = Model.Bank.AccountNumber as string ?? "";
+    var accountName = Model.Bank.AccountName as string ?? "";
+    var amountFormatted = Model.Checkout.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    var expiresUtc = DateTime.SpecifyKind(Model.Checkout.ExpiresAtUtc, DateTimeKind.Utc);
+    var secondsLeft = (int)(expiresUtc - DateTime.UtcNow).TotalSeconds;
+    if (secondsLeft <= 0) secondsLeft = 0; // 7 phút an toàn
+}
+
+<div class="checkout-container" id="checkout-page" data-token="@Model.Checkout.LookupToken" data-expires-at="@Model.Checkout.ExpiresAtUtc.ToString("O")">
+    <div class="checkout-header text-center">
+        <p class="eyebrow" data-i18n="checkout_eyebrow">BƯỚC 2 · THANH TOÁN TỰ ĐỘNG</p>
+        <h1 class="checkout-title" data-i18n="checkout_title">Quét Mã VietQR Để Nhận Vé</h1>
+        <p class="checkout-subtitle" data-i18n="checkout_subtitle">Mở ứng dụng Ngân hàng bất kỳ hoặc MoMo/VNPay để quét mã thanh toán 1-chạm</p>
+    </div>
+
+    <div class="checkout-card">
+        <!-- CỘT TRÁI: MÃ QR ĐỘNG KHÓA CỨNG SỐ TIỀN -->
+        <div class="qr-column">
+            <div class="countdown-badge" id="countdown-wrap">
+                <span class="timer-icon">⏱️</span>
+                <span data-i18n="hold_temp">Giữ chỗ tạm thời:</span>
+                <strong id="countdown">07:00</strong>
+            </div>
+
+            <div class="qr-frame-box" id="qr-wrap">
+                <div class="qr-img-wrapper">
+                    @if (!string.IsNullOrWhiteSpace(qrBase64))
+                    {
+                        <img id="payment-qr" alt="Mã thanh toán VietQR" src="data:image/png;base64,@qrBase64" />
+                    }
+                    else
+                    {
+                        <p role="status">Thanh toán trực tuyến hiện chưa sẵn sàng. Vui lòng liên hệ nhà xe để được hỗ trợ; không chuyển tiền khi chưa có thông tin ngân hàng.</p>
+                    }
+                    <div id="expired-overlay">
+                        <div class="expired-icon">⚠️</div>
+                        <h4 data-i18n="modal_expired_title">Mã QR đã hết hạn</h4>
+                        <p data-i18n="modal_expired_desc">Thời gian giữ chỗ 7 phút đã kết thúc</p>
+                        <a href="/" class="button button-primary" style="margin-top: 10px; font-size: 13px;" data-i18n="nav_home">Tìm chuyến mới</a>
+                    </div>
+                </div>
+
+                <div class="qr-locked-tag">
+                    <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                    <span data-i18n="modal_lock_tag">Số tiền đã khóa cứng tự động (EMVCo Tag 54)</span>
+                </div>
+            </div>
+
+            <p class="qr-help-text" data-i18n="qr_help_text">Giữ nguyên số tiền và nội dung chuyển khoản. Vé được phát hành sau khi ngân hàng xác nhận thanh toán.</p>
+        </div>
+
+        <!-- CỘT PHẢI: CHI TIẾT GIAO DỊCH & THAO TÁC -->
+        <div class="details-column">
+            <div class="payment-specs-card">
+                <h3 data-i18n="passenger_info_title">Thông tin thanh toán</h3>
+
+                <div class="spec-row">
+                    <span class="spec-label" data-i18n="modal_bank_label">Ngân hàng thụ hưởng:</span>
+                    <strong class="spec-value">@(Model.Bank.Name ?? "")</strong>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label" data-i18n="modal_account_num_label">Số tài khoản:</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong class="spec-value font-mono">@(Model.Bank.AccountNumber ?? "")</strong>
+                        <button type="button" class="btn-copy-chip" onclick="navigator.clipboard.writeText('@(Model.Bank.AccountNumber ?? "")'); this.textContent=(window.SMT?window.SMT.t('btn_copied'):'✓ Đã chép'); setTimeout(()=>this.textContent=(window.SMT?window.SMT.t('btn_copy'):'Sao chép'), 2000);" data-i18n="btn_copy">Sao chép</button>
+                    </div>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label" data-i18n="modal_account_name_label">Tên người nhận:</span>
+                    <strong class="spec-value">@(Model.Bank.AccountName ?? "")</strong>
+                </div>
+
+                <div class="spec-row highlight-row">
+                    <span class="spec-label" data-i18n="modal_ref_label">Nội dung chuyển khoản:</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong class="spec-value font-mono text-plum">STKT@Model.Checkout.BookingCode</strong>
+                        <button type="button" class="btn-copy-chip" onclick="navigator.clipboard.writeText('STKT@Model.Checkout.BookingCode'); this.textContent=(window.SMT?window.SMT.t('btn_copied'):'✓ Đã chép'); setTimeout(()=>this.textContent=(window.SMT?window.SMT.t('btn_copy'):'Sao chép'), 2000);" data-i18n="btn_copy">Sao chép</button>
+                    </div>
+                </div>
+
+                <div class="spec-row total-row">
+                    <span class="spec-label" data-i18n="modal_amount_label">Tổng tiền thanh toán:</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong class="spec-value text-crimson font-large">@Model.Checkout.Amount.ToString("N0") ₫</strong>
+                        <button type="button" class="btn-copy-chip" onclick="navigator.clipboard.writeText('@Model.Checkout.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)'); this.textContent=(window.SMT?window.SMT.t('btn_copied'):'✓ Đã chép'); setTimeout(()=>this.textContent=(window.SMT?window.SMT.t('btn_copy'):'Sao chép'), 2000);" data-i18n="btn_copy">Sao chép</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons-group">
+                <a class="button button-deep-app @(string.IsNullOrWhiteSpace(Model.BankAppDeepLink as string) ? "" : "")"
+                   id="bank-app" hidden="@(string.IsNullOrWhiteSpace(Model.BankAppDeepLink as string))"
+                   href="@(Model.BankAppDeepLink ?? "#")"
+                   target="_blank">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span data-i18n="btn_bank_app">Mở App Ngân Hàng (DeepLink)</span>
+                </a>
+
+                <a class="button button-outline"
+                   id="save-qr" hidden="@(string.IsNullOrWhiteSpace(qrBase64))"
+                   href="@(string.IsNullOrWhiteSpace(qrBase64) ? "#" : "data:image/png;base64," + qrBase64)"
+                   download="SmartTicket-@(Model.Checkout.BookingCode).png">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span data-i18n="btn_save_qr">Lưu mã QR về máy</span>
+                </a>
+            </div>
+
+
+
+            <div class="payment-status-box" id="status-box">
+                <div class="status-pulse-dot"></div>
+                <div class="status-text-content">
+                    <strong id="status-title" data-i18n="modal_waiting_title">Đang chờ ngân hàng xác nhận giao dịch...</strong>
+                    <p id="status-desc" data-i18n="modal_waiting_desc">Hệ thống tự động đồng bộ và mở vé ngay sau khi bạn quét mã.</p>
+                </div>
+            </div>
+                <div class="status-pulse-dot"></div>
+                <div class="status-text-content">
+                    <strong id="status-title">Đang chờ ngân hàng xác nhận giao dịch...</strong>
+                    <p id="status-desc">Hệ thống tự động đồng bộ và mở vé ngay sau khi bạn quét mã.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/payments-checkout.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/payments-checkout.js" asp-append-version="true"></script>
+}

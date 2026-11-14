@@ -1,0 +1,30 @@
+.drivers-page { max-width: 1280px; margin: 0 auto; }
+.driver-layout-grid {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr); gap: 24px; align-items: start;
+}
+.driver-form-card { max-width: 100%; padding: 28px; }
+
+.driver-name-cell {
+    display: flex; align-items: center; gap: 12px;
+}
+.driver-avatar-circle {
+    width: 38px; height: 38px; border-radius: 50%; background: #f2edff; color: #5e17eb;
+    display: grid; place-items: center; font-size: 14px; font-weight: 800; flex-shrink: 0;
+}
+.driver-phone-link {
+    color: #1a162b; text-decoration: none; font-weight: 600; font-size: 12px;
+}
+.driver-phone-link:hover { color: #5e17eb; }
+.license-code-badge {
+    font-size: 11px; background: #faf7f5; border: 1px solid #e2dce4; padding: 3px 8px;
+    border-radius: 6px; font-family: monospace; color: #1a162b; font-weight: 700;
+}
+
+.edit-btn { background: #f2edff; color: #5e17eb; }
+.edit-btn:hover { background: #5e17eb; color: #fff; }
+.deactivate-btn { background: #fff0f3; color: #c81d4a; }
+.deactivate-btn:hover { background: #c81d4a; color: #fff; }
+
+@media (max-width: 900px) {
+    .driver-layout-grid { grid-template-columns: 1fr; }
+}

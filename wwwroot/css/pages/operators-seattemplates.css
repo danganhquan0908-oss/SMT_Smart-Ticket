@@ -1,0 +1,55 @@
+.seat-templates-page { max-width: 1280px; margin: 0 auto; }
+.template-layout-grid {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr); gap: 24px; align-items: start;
+}
+.template-form-card { max-width: 100%; padding: 28px; }
+
+.seat-live-preview-box {
+    margin-top: 20px; background: #faf7f5; border: 1px solid #eee9e6; border-radius: 12px; padding: 18px;
+}
+.preview-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.preview-badge {
+    font-size: 9px; font-weight: 800; color: #5e17eb; letter-spacing: 1px; background: #f2edff;
+    padding: 3px 8px; border-radius: 6px;
+}
+#previewSummary { font-size: 13px; color: #1a162b; }
+
+.preview-decks-wrap { display: flex; flex-direction: column; gap: 12px; }
+.preview-deck-panel {
+    background: #fff; border: 1px solid #eee9e6; border-radius: 10px; padding: 12px;
+}
+.deck-title { font-size: 11px; font-weight: 700; color: #777486; display: block; margin-bottom: 8px; }
+.preview-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.template-guide-card { display: flex; flex-direction: column; gap: 18px; }
+.guide-box {
+    background: #fff; border: 1px solid #eee9e6; border-radius: 16px; padding: 24px;
+    box-shadow: 0 4px 16px rgba(26,22,43,0.04);
+}
+.guide-icon { font-size: 28px; margin-bottom: 10px; }
+.guide-box h3 { font-size: 16px; font-weight: 800; color: #1a162b; margin: 0 0 10px; }
+.guide-box p { font-size: 12px; color: #777486; line-height: 1.6; margin: 0 0 14px; }
+.guide-bullets { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.guide-bullets li { font-size: 11px; color: #777486; line-height: 1.5; }
+.guide-bullets strong { color: #1a162b; }
+.guide-bullets code { background: #f2edff; color: #5e17eb; padding: 2px 5px; border-radius: 4px; font-weight: 700; }
+
+.quick-link-box {
+    background: #1a162b; color: #fff; border-radius: 16px; padding: 22px;
+}
+.quick-link-box strong { font-size: 13px; color: #fff; display: block; margin-bottom: 4px; }
+.quick-link-box p { font-size: 11px; color: #d5cddb; margin: 0 0 14px; }
+.quick-link-box .button-outline { width: 100%; border-color: #ffffff33; color: #fff; background: transparent; }
+.quick-link-box .button-outline:hover { background: #ffffff18; }
+
+.template-name-title { font-weight: 800; color: #1a162b; font-size: 13px; }
+.vehicle-type-tag {
+    font-size: 11px; font-weight: 600; background: #faf7f5; border: 1px solid #e2dce4;
+    padding: 3px 8px; border-radius: 6px; color: #1a162b;
+}
+
+@media (max-width: 900px) {
+    .template-layout-grid { grid-template-columns: 1fr; }
+}

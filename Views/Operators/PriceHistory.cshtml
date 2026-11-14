@@ -1,0 +1,133 @@
+@model IReadOnlyList<BusGoSmartTicket.Models.DTOs.Operators.TripPriceAuditDto>
+@{
+    ViewData["Title"] = "Lịch sử Điều chỉnh Giá vé - Smart Ticket";
+}
+
+<div class="price-history-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">NHẬT KÝ KIỂM TOÁN VẬN HÀNH</p>
+            <h1>Lịch sử thay đổi giá vé</h1>
+            <p>Toàn bộ các lần thay đổi giá vé của chuyến xe được lưu trữ bất biến (Immutable Audit Log) phục vụ đối soát và minh bạch doanh thu.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="button button-outline" asp-action="Trips">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Quay lại danh sách chuyến xe
+            </a>
+        </div>
+    </div>
+
+    <!-- AUDIT NOTICE BANNER -->
+    <div class="audit-policy-banner">
+        <div class="banner-icon">🛡️</div>
+        <div class="banner-text">
+            <strong>Chính sách minh bạch & kiểm toán giá vé Smart Ticket</strong>
+            <p>
+                Mọi thao tác cập nhật giá vé niêm yết đều được hệ thống ghi nhận thời điểm chính xác (theo giờ Việt Nam UTC+7), danh tính tài khoản thực hiện và giá trị thay đổi. Giá vé mới chỉ áp dụng cho các lượt đặt chỗ phát sinh sau thời điểm thay đổi.
+            </p>
+        </div>
+    </div>
+
+    <!-- TABLE AUDIT LOGS -->
+    <div class="table-card" style="margin-top: 24px;">
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <strong>Nhật ký các lần biến động giá vé</strong>
+                <span>(@Model.Count bản ghi kiểm toán)</span>
+            </div>
+            <div class="live-label"><i></i> Bản ghi đối soát bảo vệ dữ liệu</div>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Thời điểm thay đổi (GMT+7)</th>
+                        <th>Tài khoản thực hiện</th>
+                        <th>Giá vé trước đổi</th>
+                        <th>Giá vé áp dụng mới</th>
+                        <th>Biến động chênh lệch</th>
+                        <th>Hành động / Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var changedLocal = item.ChangedAtUtc.AddHours(7); // Giờ Việt Nam chuẩn xác & an toàn trên mọi hệ điều hành
+                        var diff = item.NewPrice - item.OldPrice;
+                        var isInitial = item.OldPrice == 0;
+
+                        <tr>
+                            <td class="primary-cell">
+                                <div class="audit-time-bold">@changedLocal.ToString("HH:mm:ss")</div>
+                                <small class="audit-date-sub">@changedLocal.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td>
+                                <div class="modifier-badge">
+                                    <span class="user-icon">👤</span>
+                                    <strong>@item.ModifiedBy</strong>
+                                </div>
+                            </td>
+                            <td>
+                                @if (isInitial)
+                                {
+                                    <span class="muted-price">-- Khởi tạo ban đầu --</span>
+                                }
+                                else
+                                {
+                                    <span class="old-price-val">@item.OldPrice.ToString("N0") ₫</span>
+                                }
+                            </td>
+                            <td>
+                                <strong class="new-price-val">@item.NewPrice.ToString("N0") ₫</strong>
+                            </td>
+                            <td>
+                                @if (isInitial)
+                                {
+                                    <span class="diff-tag initial">Mức giá ban đầu</span>
+                                }
+                                else if (diff > 0)
+                                {
+                                    <span class="diff-tag increase">
+                                        ▲ +@diff.ToString("N0") ₫
+                                    </span>
+                                }
+                                else if (diff < 0)
+                                {
+                                    <span class="diff-tag decrease">
+                                        ▼ @diff.ToString("N0") ₫
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="diff-tag same">Không đổi</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="action-badge">@item.Action</span>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-symbol">📜</div>
+                                <strong>Chưa có biến động giá nào được ghi nhận</strong>
+                                <p>Chuyến xe này vẫn đang áp dụng mức giá vé niêm yết ban đầu khi tạo chuyến.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/operators-pricehistory.css" asp-append-version="true" />
+}

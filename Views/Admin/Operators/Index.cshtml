@@ -1,0 +1,244 @@
+@model IReadOnlyList<BusGoSmartTicket.Models.DTOs.Operators.OperatorApplicationDto>
+@using BusGoSmartTicket.Models.Entities
+@{
+    ViewData["Title"] = "Thẩm định & Quản lý Nhà xe - Smart Ticket";
+    var pendingCount = Model.Count(x => x.Status == OperatorStatus.PendingVerification);
+    var activeCount = Model.Count(x => x.Status == OperatorStatus.Active);
+    var rejectedCount = Model.Count(x => x.Status == OperatorStatus.Rejected);
+}
+
+<div class="admin-operators-page">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">QUẢN TRỊ HỆ THỐNG · ĐỐI TÁC</p>
+            <h1>Thẩm định & Quản lý Nhà xe</h1>
+            <p>Kiểm tra tính pháp lý của giấy phép kinh doanh, duyệt hồ sơ và giám sát trạng thái kích hoạt tài khoản nhà xe.</p>
+        </div>
+        <div class="heading-actions">
+            <span class="live-label"><i></i> Hệ thống sẵn sàng</span>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_Feedback")
+
+    <!-- METRICS CARDS -->
+    <div class="admin-stats-grid">
+        <div class="stat-card" data-filter="all" onclick="setFilter('all')">
+            <div class="stat-icon total">🏢</div>
+            <div class="stat-body">
+                <span class="stat-label">Tổng hồ sơ đăng ký</span>
+                <strong class="stat-value">@Model.Count</strong>
+            </div>
+            <div class="stat-badge">Toàn bộ</div>
+        </div>
+
+        <div class="stat-card pending" data-filter="pending" onclick="setFilter('pending')">
+            <div class="stat-icon pending">⏳</div>
+            <div class="stat-body">
+                <span class="stat-label">Chờ thẩm định</span>
+                <strong class="stat-value text-amber">@pendingCount</strong>
+            </div>
+            <div class="stat-badge warning">Cần xử lý</div>
+        </div>
+
+        <div class="stat-card active" data-filter="active" onclick="setFilter('active')">
+            <div class="stat-icon active">✓</div>
+            <div class="stat-body">
+                <span class="stat-label">Đang hoạt động</span>
+                <strong class="stat-value text-emerald">@activeCount</strong>
+            </div>
+            <div class="stat-badge success">Đã kích hoạt</div>
+        </div>
+
+        <div class="stat-card rejected" data-filter="rejected" onclick="setFilter('rejected')">
+            <div class="stat-icon rejected">✕</div>
+            <div class="stat-body">
+                <span class="stat-label">Đã từ chối</span>
+                <strong class="stat-value text-rose">@rejectedCount</strong>
+            </div>
+            <div class="stat-badge danger">Không đạt</div>
+        </div>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="table-card" style="margin-top: 24px;">
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <strong>Danh sách đối tác vận tải</strong>
+                <span id="recordCountLabel">(@Model.Count hồ sơ đăng ký)</span>
+            </div>
+
+            <!-- SEARCH & TABS -->
+            <div class="toolbar-right">
+                <div class="filter-tabs">
+                    <button type="button" class="tab-btn active" onclick="setFilter('all')">Tất cả (@Model.Count)</button>
+                    <button type="button" class="tab-btn" onclick="setFilter('pending')">Chờ duyệt (@pendingCount)</button>
+                    <button type="button" class="tab-btn" onclick="setFilter('active')">Hoạt động (@activeCount)</button>
+                    <button type="button" class="tab-btn" onclick="setFilter('rejected')">Từ chối (@rejectedCount)</button>
+                </div>
+                <div class="search-input-wrap">
+                    <input type="text" id="searchInput" placeholder="Tìm tên nhà xe, MST, email..." oninput="handleSearch()" />
+                </div>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table id="operatorsTable">
+                <thead>
+                    <tr>
+                        <th>Doanh nghiệp & Ngày nộp</th>
+                        <th>Mã số thuế & Hotline</th>
+                        <th>Email đại diện</th>
+                        <th>Giấy phép KD</th>
+                        <th>Trạng thái</th>
+                        <th class="actions-col">Thao tác thẩm định</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var statusClass = item.Status switch
+                        {
+                            OperatorStatus.Active => "status-active",
+                            OperatorStatus.PendingVerification => "status-pending",
+                            _ => "status-inactive"
+                        };
+                        var statusFilterValue = item.Status switch
+                        {
+                            OperatorStatus.Active => "active",
+                            OperatorStatus.PendingVerification => "pending",
+                            _ => "rejected"
+                        };
+                        var submittedLocal = item.SubmittedAtUtc.AddHours(7); // Giờ Việt Nam
+
+                        <tr class="operator-row" data-status="@statusFilterValue" data-keywords="@item.CompanyName.ToLower() @item.TaxCode.ToLower() @item.Email.ToLower() @item.Hotline.ToLower()">
+                            <td class="primary-cell">
+                                <div class="company-name-bold">@item.CompanyName</div>
+                                <small class="date-sub">Nộp lúc: @submittedLocal.ToString("dd/MM/yyyy HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="tax-code-badge">MST: <strong>@item.TaxCode</strong></div>
+                                <div class="hotline-sub">
+                                    <a href="tel:@item.Hotline" class="hotline-link">📞 @item.Hotline</a>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="email-badge">@item.Email</span>
+                            </td>
+                            <td>
+                                <a asp-action="License" asp-route-id="@item.Id" target="_blank" class="license-view-btn" title="Mở file giấy phép kinh doanh">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                                    Xem giấy phép ↗
+                                </a>
+                            </td>
+                            <td>
+                                <span class="status @statusClass">
+                                    @if (item.Status == OperatorStatus.Active)
+                                    {
+                                        <span>✓ Đã kích hoạt</span>
+                                    }
+                                    else if (item.Status == OperatorStatus.PendingVerification)
+                                    {
+                                        <span>⏳ Chờ thẩm định</span>
+                                    }
+                                    else
+                                    {
+                                        <span>✕ Đã từ chối</span>
+                                    }
+                                </span>
+                                @if (!string.IsNullOrWhiteSpace(item.ReviewNote))
+                                {
+                                    <div class="review-note-box" title="Ghi chú thẩm định">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                        <span>@item.ReviewNote</span>
+                                    </div>
+                                }
+                            </td>
+                            <td class="actions-col">
+                                <div class="row-actions">
+                                    @if (item.Status == OperatorStatus.PendingVerification)
+                                    {
+                                        <!-- DUYỆT HỒ SƠ -->
+                                        <form asp-action="Approve" asp-route-id="@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Xác nhận phê duyệt hồ sơ nhà xe @item.CompanyName? Email kích hoạt tài khoản sẽ được gửi tự động.')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="action-btn approve-btn" title="Duyệt hồ sơ và gửi link kích hoạt">
+                                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                                                Duyệt
+                                            </button>
+                                        </form>
+
+                                        <!-- TỪ CHỐI HỒ SƠ -->
+                                        <button type="button" class="action-btn reject-btn" onclick="openRejectModal('@item.Id', '@item.CompanyName')" title="Từ chối hồ sơ kèm lý do">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                                            Từ chối
+                                        </button>
+                                    }
+                                    else if (item.Status == OperatorStatus.Active)
+                                    {
+                                        <form asp-action="ResendActivation" asp-route-id="@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Gửi lại email liên kết kích hoạt đến @item.Email?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="action-btn resend-btn" title="Gửi lại liên kết kích hoạt">
+                                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                                Gửi lại kích hoạt
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted-small">Hồ sơ lưu trữ</span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <div class="empty-symbol">📂</div>
+                                <strong>Chưa có hồ sơ nhà xe nào</strong>
+                                <p>Các đơn đăng ký của nhà xe sẽ xuất hiện tại đây để đội ngũ quản trị thẩm định.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TỪ CHỐI HỒ SƠ -->
+<div id="rejectModal" class="reject-modal-backdrop" style="display:none;">
+    <div class="reject-modal-card">
+        <div class="modal-header">
+            <h3>Từ chối hồ sơ đăng ký</h3>
+            <button type="button" class="close-btn" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <form id="rejectForm" method="post">
+            @Html.AntiForgeryToken()
+            <div class="modal-body">
+                <p>Bạn đang từ chối hồ sơ nhà xe: <strong id="rejectCompanyName" style="color: #c81d4a;"></strong></p>
+                <div class="field" style="margin-top: 12px;">
+                    <label for="rejectNoteInput">Lý do từ chối thẩm định <span class="required">*</span></label>
+                    <textarea name="note" id="rejectNoteInput" rows="3" class="form-input" style="height: auto; padding: 10px;" required placeholder="Ví dụ: Giấy phép kinh doanh không khớp thông tin MST, hoặc tệp đính kèm bị mờ không đọc được..."></textarea>
+                    <small class="field-help">Lý do này sẽ được ghi nhận vào lịch sử hồ sơ để nhà xe nắm được.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="button button-outline" onclick="closeRejectModal()">Hủy bỏ</button>
+                <button type="submit" class="button button-primary" style="background:#c81d4a;">Xác nhận từ chối</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+<script src="~/js/pages/admin-operators-index.js" asp-append-version="true"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/admin-operators-index.css" asp-append-version="true" />
+}

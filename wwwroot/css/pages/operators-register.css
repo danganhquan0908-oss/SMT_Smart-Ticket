@@ -1,0 +1,110 @@
+.operator-register-page { max-width: 1200px; margin: 0 auto; }
+.onboarding-steps-container {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 28px; background: #fff; padding: 20px 24px;
+    border: 1px solid #eee9e6; border-radius: 16px; box-shadow: 0 4px 16px rgba(26,22,43,0.04);
+}
+.onboarding-step-card {
+    display: flex; align-items: center; gap: 12px; flex: 1; padding: 10px 14px;
+    border-radius: 12px; background: #faf7f5; border: 1px solid #eee9e6;
+}
+.onboarding-step-card.active {
+    background: #fff0f3; border-color: #f7aabf;
+}
+.step-num-badge {
+    width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    background: #1a162b; color: #fff; font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+.onboarding-step-card.active .step-num-badge {
+    background: #c81d4a; color: #fff;
+}
+.step-content { display: flex; flex-direction: column; gap: 2px; }
+.step-content strong { font-size: 13px; color: #1a162b; }
+.step-content p { font-size: 11px; color: #777486; margin: 0; }
+.step-status-tag {
+    font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 20px;
+    background: #f2edff; color: #5e17eb; margin-left: auto; white-space: nowrap;
+}
+.onboarding-step-card.active .step-status-tag {
+    background: #c81d4a; color: #fff;
+}
+.step-status-tag.waiting {
+    background: #eee9e6; color: #777486;
+}
+.onboarding-step-arrow { color: #aaa2b3; font-weight: 700; font-size: 16px; }
+
+.register-layout-grid {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr); gap: 24px; align-items: start;
+}
+.register-main-card { max-width: 100%; padding: 32px; }
+.form-header-bar { margin-bottom: 24px; }
+.brand-sub-badge {
+    display: inline-block; padding: 4px 10px; border-radius: 6px;
+    background: #f2edff; color: #5e17eb; font-size: 10px; font-weight: 800;
+    letter-spacing: 1px; margin-bottom: 8px;
+}
+.form-header-bar h2 { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: #1a162b; }
+.required { color: #c81d4a; font-weight: 700; }
+.field-help { font-size: 11px; color: #777486; margin-top: 4px; }
+
+.file-upload-dropzone {
+    position: relative; border: 2px dashed #d9d0e2; border-radius: 12px;
+    background: #faf7f5; padding: 24px 20px; text-align: center;
+    transition: border-color 0.2s, background-color 0.2s; cursor: pointer;
+}
+.file-upload-dropzone:hover {
+    border-color: #5e17eb; background: #fbf9ff;
+}
+.file-upload-dropzone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2;
+}
+.dropzone-content { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dropzone-icon {
+    width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+    background: #f2edff; color: #5e17eb;
+}
+.dropzone-text strong { display: block; font-size: 13px; color: #1a162b; margin-bottom: 4px; }
+.dropzone-text span { font-size: 11px; color: #777486; }
+
+.security-assurance-box {
+    display: flex; gap: 14px; align-items: flex-start; margin-top: 22px;
+    padding: 16px; background: #eaf8f2; border: 1px solid #d5efe3;
+    border-radius: 12px; color: #14724f;
+}
+.security-assurance-box strong { font-size: 12px; display: block; margin-bottom: 2px; }
+.security-assurance-box p { font-size: 11px; line-height: 1.6; margin: 0; color: #1f6b50; }
+
+.register-sidebar { display: flex; flex-direction: column; gap: 18px; }
+.benefit-card {
+    background: #fff; border: 1px solid #eee9e6; border-radius: 16px;
+    padding: 26px; box-shadow: 0 4px 16px rgba(26,22,43,0.04);
+}
+.benefit-card h3 { font-size: 16px; font-weight: 800; color: #1a162b; margin: 0 0 18px; }
+.benefit-list { list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-direction: column; gap: 16px; }
+.benefit-list li { display: flex; gap: 12px; align-items: flex-start; }
+.b-icon {
+    width: 22px; height: 22px; border-radius: 50%; background: #16825d; color: #fff;
+    display: grid; place-items: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
+}
+.benefit-list strong { font-size: 13px; color: #1a162b; display: block; margin-bottom: 2px; }
+.benefit-list p { font-size: 11px; color: #777486; line-height: 1.5; margin: 0; }
+
+.sidebar-support-box {
+    border-top: 1px solid #eee9e6; padding-top: 18px; display: flex; flex-direction: column; gap: 6px;
+}
+.support-title { font-size: 11px; font-weight: 800; color: #1a162b; letter-spacing: 0.5px; }
+.sidebar-support-box p { font-size: 11px; color: #777486; margin: 0; }
+.support-phone { font-size: 16px; font-weight: 800; color: #c81d4a; text-decoration: none; margin-top: 4px; }
+.support-email { font-size: 11px; color: #5e17eb; }
+
+.already-registered-card {
+    background: #1a162b; color: #fff; border-radius: 16px; padding: 22px; text-align: center;
+}
+.already-registered-card p { font-size: 12px; color: #d5cddb; margin: 0 0 12px; }
+.already-registered-card .button-light { width: 100%; }
+
+@media (max-width: 900px) {
+    .onboarding-steps-container { flex-direction: column; align-items: stretch; }
+    .onboarding-step-arrow { display: none; }
+    .register-layout-grid { grid-template-columns: 1fr; }
+}

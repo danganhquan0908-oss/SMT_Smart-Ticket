@@ -1,0 +1,20 @@
+.route-display-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+  }
+  .station-node {
+    font-weight: 800;
+  }
+  .station-node.from {
+    color: var(--ink, #1a162b);
+  }
+  .station-node.to {
+    color: var(--plum, #5e17eb);
+  }
+  .route-arrow {
+    color: var(--crimson, #c81d4a);
+    font-weight: 800;
+    font-size: 14px;
+  }

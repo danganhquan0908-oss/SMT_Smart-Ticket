@@ -1,0 +1,527 @@
+@model IReadOnlyList<BusGoSmartTicket.Models.DTOs.Operations.OperationsTripDto>
+@{
+    ViewData["Title"] = "Cổng Soát Vé & Lệnh Xuất Bến - Smart Ticket";
+    var trips = Model ?? Array.Empty<BusGoSmartTicket.Models.DTOs.Operations.OperationsTripDto>();
+    var scheduledTrips = trips.Where(x => x.Status == "Scheduled" && !x.HasApprovedDispatch).ToList();
+    var approvedTrips = trips.Where(x => x.HasApprovedDispatch && x.Status == "Scheduled").ToList();
+    var runningTrips = trips.Where(x => x.Status == "Running").ToList();
+    var completedTrips = trips.Where(x => x.Status == "Completed").ToList();
+    var totalSold = trips.Sum(x => x.TicketCount);
+    var totalCheckedIn = trips.Sum(x => x.CheckedInCount);
+}
+
+@Html.AntiForgeryToken()
+
+<div class="station-cockpit-shell">
+    <!-- COCKPIT TOPBAR -->
+    <header class="cockpit-header">
+        <div class="header-left">
+            <span class="eyebrow-smt">
+                <span class="pulse-dot"></span>
+                SMT GATE CONTROL SYSTEM · VẬN HÀNH BẾN XE ĐIỆN TỬ
+            </span>
+            <h1 class="cockpit-title">Cổng Soát Vé & Cấp Lệnh Xuất Bến</h1>
+            <p class="cockpit-subtitle">
+                Xác thực mã QR vé, cảnh báo âm thanh chống tái sử dụng vé, kiểm định an toàn và ký số lệnh xuất bến.
+            </p>
+        </div>
+        <div class="header-right">
+            <div class="clock-badge" id="station-clock">--:--:-- · GMT+7</div>
+            <div class="cockpit-pill-group">
+                <span class="net-pill online" id="net-status">
+                    <i class="dot"></i>
+                    <span>Trực tuyến (Online)</span>
+                </span>
+                <span class="queue-pill" id="sync-badge" title="Lượt quét ngoại tuyến chờ gửi về máy chủ">
+                    <span id="queue-count">0</span> vé chờ đồng bộ
+                </span>
+                <button type="button" class="btn-sync-action" id="btn-sync-now" style="display: none;">Đồng bộ ngay</button>
+            </div>
+            <div class="user-role-chip">
+                <span class="role-icon">🛡️</span>
+                <span>@ViewBag.UserRole</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- METRICS STRIP -->
+    <div class="kpi-strip">
+        <div class="kpi-card">
+            <span class="kpi-label">TỔNG CHUYẾN TẠI BẾN</span>
+            <strong class="kpi-value">@trips.Count</strong>
+            <small class="kpi-sub">@scheduledTrips.Count chuyến chờ kiểm định</small>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">TỔNG VÉ ĐÃ BÁN</span>
+            <strong class="kpi-value">@totalSold</strong>
+            <small class="kpi-sub">Trên các chuyến được phân công</small>
+        </div>
+        <div class="kpi-card">
+            <span class="kpi-label">HÀNH KHÁCH ĐÃ CHECK-IN</span>
+            <strong class="kpi-value text-green">@totalCheckedIn</strong>
+            <small class="kpi-sub">@(totalSold > 0 ? (totalCheckedIn * 100 / totalSold) : 0)% đã qua cổng bến</small>
+        </div>
+        <div class="kpi-card highlight-dod">
+            <span class="kpi-label">THỜI GIAN XÁC THỰC</span>
+            <strong class="kpi-value text-accent" id="live-latency">⚡ -- ms</strong>
+            <small class="kpi-sub" id="dod-status">Chưa có lượt xác thực</small>
+        </div>
+    </div>
+
+    <!-- MAIN COCKPIT GRID -->
+    <div class="cockpit-grid">
+        <!-- SCANNER COCKPIT (LEFT) -->
+        <section class="scanner-cockpit-panel">
+            <div class="panel-head">
+                <div class="panel-title-wrap">
+                    <span class="panel-icon">🎟️</span>
+                    <div>
+                        <h2>Trạm Soát Vé Tự Động</h2>
+                        <span class="panel-desc">Sử dụng máy quét mã vạch (Barcode Gun) hoặc Camera</span>
+                    </div>
+                </div>
+                <div class="panel-actions">
+                    <button type="button" class="btn-sound-toggle" id="btn-sound-toggle" title="Bật/Tắt âm thanh cảnh báo">
+                        <span id="sound-icon">🔊</span> Âm thanh: <strong id="sound-state">BẬT</strong>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCANNER INPUT BAR -->
+            <div class="scanner-input-container">
+                <div class="scanner-input-box">
+                    <span class="input-prefix-icon">🔍</span>
+                    <input id="ticket-token"
+                           type="text"
+                           placeholder="Quét mã QR trên vé hoặc nhập mã JWT..."
+                           autocomplete="off"
+                           autofocus />
+                    <button type="button" class="btn-clear-input" id="btn-clear" title="Xóa ô nhập">&times;</button>
+                </div>
+                <div class="scanner-btn-group">
+                    <button type="button" class="btn-smt-primary" id="verify-ticket">
+                        <span>Xác thực vé</span>
+                        <kbd>Enter</kbd>
+                    </button>
+                    <button type="button" class="btn-smt-outline" id="start-camera">
+                        <span>📷 Mở Camera</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CAMERA VIEWFINDER (TOGGLEABLE) -->
+            <div class="camera-viewfinder-wrapper" id="camera-wrapper" style="display: none;">
+                <div class="camera-frame">
+                    <video id="camera" playsinline></video>
+                    <div class="reticle-overlay">
+                        <div class="reticle-corner top-left"></div>
+                        <div class="reticle-corner top-right"></div>
+                        <div class="reticle-corner bottom-left"></div>
+                        <div class="reticle-corner bottom-right"></div>
+                        <div class="laser-scanner-line"></div>
+                        <div class="reticle-hint">Hướng khung camera vào mã QR vé</div>
+                    </div>
+                </div>
+                <div class="camera-controls-bar">
+                    <button type="button" class="btn-cam-switch" id="btn-cam-switch">🔄 Đổi Camera</button>
+                    <button type="button" class="btn-cam-close" id="btn-cam-close">✕ Tắt Camera</button>
+                </div>
+            </div>
+
+            <!-- RESULT DISPLAY CARD -->
+            <div id="scan-result-card" class="scan-result-card idle">
+                <div class="result-status-icon" id="res-icon">🛡️</div>
+                <div class="result-body">
+                    <div class="result-headline" id="res-headline">SẴN SÀNG SOÁT VÉ</div>
+                    <div class="result-main-text" id="res-message">Hướng máy quét barcode hoặc camera vào mã QR trên vé hành khách.</div>
+
+                    <div class="result-meta-grid" id="res-meta-grid" style="display: none;">
+                        <div class="meta-item seat-highlight">
+                            <span class="meta-label">SỐ GHẾ</span>
+                            <strong class="meta-val" id="res-seat-code">--</strong>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">TUYẾN ĐƯỜNG</span>
+                            <span class="meta-val" id="res-trip-name">--</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">GIỜ KHỞI HÀNH</span>
+                            <span class="meta-val" id="res-departure-time">--</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">TỐC ĐỘ XÁC THỰC</span>
+                            <span class="meta-val text-green" id="res-scan-time">-- ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIT LOG: RECENT SCANS -->
+            <div class="recent-scans-block">
+                <div class="recent-scans-head">
+                    <h3>Nhật ký lượt quét gần nhất trong ca</h3>
+                    <button type="button" class="btn-clear-log" id="btn-clear-log">Xóa nhật ký ca</button>
+                </div>
+                <div class="table-scroll-mini">
+                    <table class="recent-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Ghế</th>
+                                <th>Chuyến</th>
+                                <th>Trạng thái</th>
+                                <th>Chế độ</th>
+                                <th>Độ trễ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-scans-body">
+                            <tr class="empty-row">
+                                <td colspan="6">Chưa có lượt quét nào trong phiên làm việc này.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATION TRIPS & DISPATCH CLEARANCE (RIGHT) -->
+        <section class="trips-manifest-panel">
+            <div class="panel-head">
+                <div class="panel-title-wrap">
+                    <span class="panel-icon">🚌</span>
+                    <div>
+                        <h2>Danh Sách Chuyến & Lệnh Xuất Bến</h2>
+                        <span class="panel-desc">Kiểm soát hành trình, tải khách và cấp lệnh xuất bến điện tử</span>
+                    </div>
+                </div>
+                <div class="filter-chip-group">
+                    <button type="button" class="filter-chip active" data-filter="all">Tất cả (@trips.Count)</button>
+                    <button type="button" class="filter-chip" data-filter="scheduled">Chờ duyệt (@scheduledTrips.Count)</button>
+                    <button type="button" class="filter-chip" data-filter="approved">Đã duyệt (@approvedTrips.Count)</button>
+                    <button type="button" class="filter-chip" data-filter="running">Đang chạy (@runningTrips.Count)</button>
+                </div>
+            </div>
+
+            <div class="trips-list-container">
+                @if (trips.Count == 0)
+                {
+                    <div class="no-trips-card">
+                        <span class="no-trips-icon">🏢</span>
+                        <h3>Chưa có chuyến xe liên quan</h3>
+                        <p>Hiện không có chuyến xe nào xuất bến hoặc cập bến tại bến xe được phân công của bạn.</p>
+                    </div>
+                }
+
+                @foreach (var trip in trips)
+                {
+                    var departLocal = trip.DepartureTimeUtc.AddHours(7);
+                    var percent = trip.TicketCount > 0 ? (trip.CheckedInCount * 100 / trip.TicketCount) : 0;
+                    var filterClass = trip.Status == "Scheduled"
+                        ? (trip.HasApprovedDispatch ? "cat-approved" : "cat-scheduled")
+                        : (trip.Status == "Running" ? "cat-running" : "cat-completed");
+
+                    <article class="trip-manifest-card @filterClass" data-trip-id="@trip.Id">
+                        <div class="card-main-info">
+                            <div class="route-line-badge">
+                                <strong class="route-name">@trip.DepartureStation → @trip.ArrivalStation</strong>
+                                <span class="depart-clock">Khởi hành: <strong>@departLocal.ToString("HH:mm")</strong> (@departLocal.ToString("dd/MM/yyyy"))</span>
+                            </div>
+
+                            <div class="vehicle-driver-row">
+                                <span class="op-badge">@trip.Operator</span>
+                                <span class="plate-badge-smt">@trip.VehiclePlate</span>
+                                <span class="driver-info">
+                                    Tài xế: <strong>@trip.Driver</strong>
+                                    @if (!string.IsNullOrWhiteSpace(trip.DriverPhone))
+                                    {
+                                        <a href="tel:@trip.DriverPhone" class="tel-link">📞 @trip.DriverPhone</a>
+                                    }
+                                </span>
+                            </div>
+
+                            <!-- BOARDING PROGRESS BAR -->
+                            <div class="boarding-progress-block">
+                                <div class="progress-labels">
+                                    <span>Hành khách đã soát vé: <strong>@trip.CheckedInCount / @trip.TicketCount vé</strong> (@percent%)</span>
+                                    <span>Sức chứa xe: <strong>@trip.TotalCapacity ghế</strong></span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: @percent%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STATUS & DISPATCH BADGE -->
+                        <div class="card-status-actions">
+                            <div class="dispatch-status-banner">
+                                @if (trip.HasApprovedDispatch)
+                                {
+                                    <div class="badge-approved-dispatch" title="Đã ký duyệt xuất bến điện tử">
+                                        <span class="check-icon">✓</span>
+                                        <div>
+                                            <strong>ĐÃ CẤP LỆNH XUẤT BẾN</strong>
+                                            <small>Ký số: @(trip.DispatchSignature?.Substring(0, Math.Min(16, trip.DispatchSignature?.Length ?? 0)) ?? "APPROVED")...</small>
+                                        </div>
+                                    </div>
+                                }
+                                else if (trip.Status == "Scheduled")
+                                {
+                                    <div class="badge-pending-dispatch">
+                                        <span class="clock-icon">⏳</span>
+                                        <div>
+                                            <strong>CHỜ KIỂM ĐỊNH & CẤP LỆNH</strong>
+                                            <small>Cần hoàn tất 4 tiêu chuẩn an toàn</small>
+                                        </div>
+                                    </div>
+                                }
+                                else if (trip.Status == "Running")
+                                {
+                                    <div class="badge-running-dispatch">
+                                        <span class="bus-icon">🚀</span>
+                                        <div>
+                                            <strong>ĐANG TRÊN HÀNH TRÌNH</strong>
+                                            <small>Đã rời bến an toàn</small>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="badge-completed-dispatch">
+                                        <span class="done-icon">🏁</span>
+                                        <div>
+                                            <strong>HOÀN TẤT CHUYẾN</strong>
+                                            <small>Lộ trình kết thúc</small>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="action-buttons-row">
+                                <button type="button"
+                                        class="btn-view-manifest"
+                                        onclick="openManifestModal('@trip.Id', '@trip.DepartureStation', '@trip.ArrivalStation', '@departLocal.ToString("HH:mm dd/MM/yyyy")', '@trip.VehiclePlate', '@trip.Driver')">
+                                    📋 Danh sách hành khách
+                                </button>
+
+                                @if (ViewBag.IsStationAgent == true && trip.Status == "Scheduled" && !trip.HasApprovedDispatch)
+                                {
+                                    <button type="button"
+                                            class="btn-sign-dispatch"
+                                            onclick="openDispatchModal('@trip.Id', '@trip.DepartureStation → @trip.ArrivalStation', '@trip.VehiclePlate', '@trip.Driver', '@departLocal.ToString("HH:mm dd/MM/yyyy")', @trip.TicketCount, @trip.TotalCapacity)">
+                                        ✍️ Kiểm định & Ký lệnh
+                                    </button>
+                                }
+
+                                @if (trip.HasApprovedDispatch)
+                                {
+                                    <button type="button"
+                                            class="btn-print-dispatch"
+                                            onclick="printDispatchOrder('@trip.Id', '@trip.DepartureStation', '@trip.ArrivalStation', '@trip.Operator', '@trip.VehiclePlate', '@trip.Driver', '@departLocal.ToString("HH:mm dd/MM/yyyy")', @trip.TicketCount, '@trip.DispatchSignature', '@trip.DispatchedAtUtc?.AddHours(7).ToString("dd/MM/yyyy HH:mm")')">
+                                        🖨️ In Lệnh Xuất Bến
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- MODAL 1: PASSENGER MANIFEST & MANUAL CHECK-IN -->
+<div class="smt-modal-overlay" id="manifest-modal" style="display: none;">
+    <div class="smt-modal-container manifest-modal-box">
+        <header class="smt-modal-head">
+            <div>
+                <span class="eyebrow-smt">DANH SÁCH HÀNH KHÁCH & VÉ CHUYẾN XE</span>
+                <h3 id="mf-trip-title">-- → --</h3>
+                <p id="mf-trip-sub">Biển số: -- · Khởi hành: --</p>
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeManifestModal()">&times;</button>
+        </header>
+
+        <div class="manifest-toolbar">
+            <div class="search-box">
+                <input type="text" id="manifest-search" placeholder="Tìm theo số ghế hoặc tên khách..." oninput="filterManifestList()" />
+            </div>
+            <div class="manifest-counts">
+                <span class="chip-count">Đã bán: <strong id="mf-sold-count">0</strong></span>
+                <span class="chip-count text-green">Đã soát vé: <strong id="mf-checked-count">0</strong></span>
+                <span class="chip-count text-amber">Chưa lên xe: <strong id="mf-pending-count">0</strong></span>
+            </div>
+        </div>
+
+        <div class="manifest-table-wrapper">
+            <table class="manifest-table">
+                <thead>
+                    <tr>
+                        <th>Ghế</th>
+                        <th>Hành khách</th>
+                        <th>Số điện thoại</th>
+                        <th>Giá vé</th>
+                        <th>Trạng thái soát vé</th>
+                        <th class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="manifest-tbody">
+                    <tr><td colspan="6" class="loading-cell">Đang tải dữ liệu danh sách vé...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="smt-modal-footer">
+            <button type="button" class="button button-outline" onclick="closeManifestModal()">Đóng</button>
+            <button type="button" class="button button-primary" onclick="window.print()">🖨️ In Danh Sách Lên Xe</button>
+        </footer>
+    </div>
+</div>
+
+<!-- MODAL 2: 4-POINT SAFETY CHECKLIST & DISPATCH CLEARANCE -->
+<div class="smt-modal-overlay" id="dispatch-modal" style="display: none;">
+    <div class="smt-modal-container dispatch-modal-box">
+        <header class="smt-modal-head">
+            <div>
+                <span class="eyebrow-smt">QUY CHUẨN BỘ GIAO THÔNG VẬN TẢI & BẾN XE</span>
+                <h3>Kiểm Định An Toàn & Ký Lệnh Xuất Bến Điện Tử</h3>
+                <p id="dp-trip-info">Chuyến: -- · Xe: -- · Tài xế: --</p>
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeDispatchModal()">&times;</button>
+        </header>
+
+        <form id="dispatch-form" class="dispatch-checklist-body">
+            <input type="hidden" id="dp-trip-id" />
+            <div class="notice-checklist-info">
+                <strong>QUY ĐỊNH BẮT BUỘC:</strong> Kiểm soát viên bến xe phải kiểm tra trực tiếp phương tiện và tài xế. Cần đạt cả 4 tiêu chuẩn an toàn bên dưới trước khi ký duyệt lệnh xuất bến.
+            </div>
+
+            <div class="checklist-items">
+                <label class="check-item-card">
+                    <input type="checkbox" id="chk-vehicle" name="vehicleDocumentsValid" onchange="validateDispatchForm()" />
+                    <div class="check-item-content">
+                        <strong>1. Hồ sơ kỹ thuật phương tiện & Thiết bị giám sát</strong>
+                        <p>Giấy đăng kiểm còn hạn; Tem kiểm định an toàn kỹ thuật; Bảo hiểm TNDS bắt buộc; Thiết bị giám sát hành trình (GPS) và camera trong xe đang truyền dữ liệu về Cục Đường bộ.</p>
+                    </div>
+                </label>
+
+                <label class="check-item-card">
+                    <input type="checkbox" id="chk-license" name="driverLicenseValid" onchange="validateDispatchForm()" />
+                    <div class="check-item-content">
+                        <strong>2. Giấy phép lái xe tài xế</strong>
+                        <p>Tài xế xuất trình bằng lái xe còn hiệu lực, đúng hạng theo quy định (Hạng E đối với xe khách trên 30 chỗ / giường nằm).</p>
+                    </div>
+                </label>
+
+                <label class="check-item-card">
+                    <input type="checkbox" id="chk-health" name="driverFitForDuty" onchange="validateDispatchForm()" />
+                    <div class="check-item-content">
+                        <strong>3. Sức khỏe & Nồng độ cồn tài xế</strong>
+                        <p>Đã kiểm tra qua máy đo nồng độ cồn = 0.00 mg/L khí thở (Nghị định 100/123); Âm tính với chất kích thích/ma túy; Thần kinh tỉnh táo, đủ điều kiện lái xe an toàn.</p>
+                    </div>
+                </label>
+
+                <label class="check-item-card">
+                    <input type="checkbox" id="chk-capacity" name="passengerCapacityValid" onchange="validateDispatchForm()" />
+                    <div class="check-item-content">
+                        <strong>4. Tải khách & Trật tự an toàn trong khoang</strong>
+                        <p>Hành khách ngồi đúng ghế vé; Tuyệt đối không chở quá số ghế quy định (<span id="dp-capacity-note">--</span>); Hành lý và hàng hóa xếp gọn trong khoang hành lý, không chở hàng nguy hiểm/cháy nổ.</p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="notes-field-wrap">
+                <label for="dp-notes">Ghi chú kiểm soát viên bến xe (Tùy chọn):</label>
+                <input type="text" id="dp-notes" maxlength="500" placeholder="VD: Kiểm tra xe đạt tiêu chuẩn, xuất bến đúng giờ..." />
+            </div>
+
+            <footer class="smt-modal-footer">
+                <button type="button" class="button button-outline" onclick="closeDispatchModal()">Hủy bỏ</button>
+                <button type="submit" class="button button-primary" id="btn-submit-dispatch" disabled>
+                    ✍️ Ký số & Cấp Lệnh Xuất Bến
+                </button>
+            </footer>
+        </form>
+    </div>
+</div>
+
+<!-- PRINTABLE DISPATCH ORDER SHEET (HIDDEN UNTIL PRINT) -->
+<div id="print-dispatch-sheet" class="print-dispatch-sheet" style="display: none;">
+    <div class="print-header">
+        <div class="gov-title">
+            <strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong>
+            <small>Độc lập - Tự do - Hạnh phúc</small>
+            <div class="underline-gov"></div>
+        </div>
+        <div class="smt-brand-print">
+            <strong>SMART TICKET - SMT</strong>
+            <small>HỆ THỐNG QUẢN LÝ BẾN XE VÀ ĐIỀU HÀNH VẬN TẢI</small>
+        </div>
+    </div>
+
+    <div class="print-sheet-title">
+        <h2>LỆNH VẬN CHUYỂN & BIÊN BẢN XUẤT BẾN ĐIỆN TỬ</h2>
+        <span id="p-sign-date">Ngày cấp lệnh: --</span>
+    </div>
+
+    <table class="print-info-table">
+        <tr>
+            <td style="width: 20%;"><strong>Đơn vị vận tải:</strong></td>
+            <td id="p-operator" style="width: 30%;">--</td>
+            <td style="width: 20%;"><strong>Biển số xe:</strong></td>
+            <td id="p-plate" style="width: 30%;">--</td>
+        </tr>
+        <tr>
+            <td><strong>Tuyến hoạt động:</strong></td>
+            <td id="p-route">--</td>
+            <td><strong>Tài xế điều khiển:</strong></td>
+            <td id="p-driver">--</td>
+        </tr>
+        <tr>
+            <td><strong>Giờ xuất bến:</strong></td>
+            <td id="p-depart">--</td>
+            <td><strong>Số lượng khách:</strong></td>
+            <td id="p-passengers">--</td>
+        </tr>
+    </table>
+
+    <div class="print-checklist-box">
+        <strong>KẾT QUẢ KIỂM TRA ĐIỀU KIỆN AN TOÀN TRƯỚC KHI XUẤT BẾN:</strong>
+        <ol>
+            <li>[X] Phương tiện đảm bảo an toàn kỹ thuật, bảo vệ môi trường, có GPS và camera giám sát hoạt động.</li>
+            <li>[X] Người lái xe có giấy phép lái xe phù hợp, còn giá trị sử dụng.</li>
+            <li>[X] Người lái xe đã được kiểm tra nồng độ cồn = 0.00 mg/L và âm tính với chất kích thích.</li>
+            <li>[X] Số lượng hành khách trên xe không vượt quá tải trọng và số ghế thiết kế.</li>
+        </ol>
+    </div>
+
+    <div class="print-signature-section">
+        <div class="sig-box">
+            <span>ĐẠI DIỆN ĐƠN VỊ VẬN TẢI</span>
+            <small>(Ký, ghi rõ họ tên)</small>
+            <div class="sig-space"></div>
+        </div>
+        <div class="sig-box">
+            <span>KIỂM SOÁT VIÊN BẾN XE</span>
+            <small>(Ký số điện tử bảo mật)</small>
+            <div class="sig-space">
+                <div class="digital-seal-stamp">
+                    <strong>ĐÃ PHÊ DUYỆT XUẤT BẾN</strong>
+                    <small id="p-sig-hash">HMAC-SHA256 SIGNED</small>
+                    <span id="p-sig-time">SMT SECURE GATEWAY</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/station-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/station-index.js" asp-append-version="true"></script>
+}

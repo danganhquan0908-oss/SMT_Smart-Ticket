@@ -1,0 +1,127 @@
+@using BusGoSmartTicket.Models.ViewModels
+@{
+    ViewData["Title"] = "Trung tâm Điều hành Nhà xe - Smart Ticket";
+    var templateCount = (int?)ViewBag.TemplateCount ?? 0;
+    var vehicleCount = (int?)ViewBag.VehicleCount ?? 0;
+    var driverCount = (int?)ViewBag.DriverCount ?? 0;
+    var tripCount = (int?)ViewBag.TripCount ?? 0;
+}
+
+<div class="operator-portal-dashboard">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">KHU VỰC ĐỐI TÁC VẬN TẢI · @(ViewBag.OperatorName ?? "SMT Express")</p>
+            <h1>Trung tâm Điều hành Nhà xe</h1>
+            <p>Quản lý toàn diện sơ đồ xe, đội phương tiện, nhân sự lái xe và phân bổ lịch chạy của <strong>@(ViewBag.OperatorName ?? "SMT Express")</strong> trên nền tảng Smart Ticket.</p>
+        </div>
+        <div class="heading-actions">
+            @if (User.IsInRole("OPERATOR_OWNER"))
+            {
+                <a class="button button-outline" asp-controller="OperatorFinance" asp-action="Index">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Ví & Đối soát doanh thu
+                </a>
+            }
+            <a class="button button-primary" asp-action="CreateTrip">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Tạo chuyến xe mới
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_Feedback")
+
+    <!-- 4 MAIN CAPABILITIES GRID -->
+    <div class="metric-grid four">
+        <a class="portal-card" asp-action="SeatTemplates">
+            <div class="portal-card-top">
+                <span>01 · SƠ ĐỒ XE</span>
+                <span class="portal-card-icon">💺</span>
+            </div>
+            <strong>@templateCount</strong>
+            <small>Mẫu ghế đã thiết lập (1 & 2 tầng) →</small>
+        </a>
+
+        <a class="portal-card" asp-action="Vehicles">
+            <div class="portal-card-top">
+                <span>02 · PHƯƠNG TIỆN</span>
+                <span class="portal-card-icon">🚌</span>
+            </div>
+            <strong>@vehicleCount</strong>
+            <small>Xe trong đội đang hoạt động →</small>
+        </a>
+
+        <a class="portal-card" asp-action="Drivers">
+            <div class="portal-card-top">
+                <span>03 · TÀI XẾ</span>
+                <span class="portal-card-icon">👨‍✈️</span>
+            </div>
+            <strong>@driverCount</strong>
+            <small>Nhân sự lái xe chính thức →</small>
+        </a>
+
+        <a class="portal-card" asp-action="Trips">
+            <div class="portal-card-top">
+                <span>04 · CHUYẾN XE</span>
+                <span class="portal-card-icon">🕒</span>
+            </div>
+            <strong>@tripCount</strong>
+            <small>Lịch chạy & quản lý giá vé niêm yết →</small>
+        </a>
+    </div>
+
+    <!-- QUICK OPERATIONS STRIP -->
+    <div class="quick-nav-strip">
+        <div class="quick-nav-header">
+            <strong>Thao tác nhanh cho Quản trị viên</strong>
+            <span>Các lối tắt thông dụng trong ca làm việc</span>
+        </div>
+        <div class="quick-nav-links">
+            <a asp-action="CreateTrip" class="quick-link-pill">
+                <span>➕</span> Lên lịch chuyến mới
+            </a>
+            <a asp-action="Vehicles" class="quick-link-pill">
+                <span>🚌</span> Khai báo xe mới
+            </a>
+            <a asp-action="Drivers" class="quick-link-pill">
+                <span>👨‍✈️</span> Thêm tài xế
+            </a>
+            <a asp-action="SeatTemplates" class="quick-link-pill">
+                <span>📐</span> Thiết kế mẫu sơ đồ ghế
+            </a>
+            <a asp-action="Trips" class="quick-link-pill">
+                <span>🏷️</span> Xem lịch sử đổi giá vé
+            </a>
+        </div>
+    </div>
+
+    <!-- DISPATCHER INVITATION PANEL (OWNER ONLY) -->
+    @if (User.IsInRole("OPERATOR_OWNER"))
+    {
+        <section class="quick-panel dispatcher-invite-panel">
+            <div class="dispatcher-copy">
+                <p class="eyebrow">PHÂN QUYỀN VẬN HÀNH</p>
+                <h2>Mời Điều phối viên (Dispatcher)</h2>
+                <p>
+                    Điều phối viên có quyền quản lý phương tiện, tài xế và lên lịch chuyến xe, nhưng không thể can thiệp vào tài khoản thanh toán hoặc lệnh rút tiền đối soát của nhà xe. Người được mời sẽ nhận email kích hoạt và bắt buộc cài đặt 2FA.
+                </p>
+            </div>
+            <form asp-action="InviteDispatcher" method="post" class="dispatcher-form">
+                @Html.AntiForgeryToken()
+                <div class="invite-input-group">
+                    <input name="Email" type="email" placeholder="email.dieuphoi@nhaxe.vn" class="form-input" required />
+                    <button type="submit" class="button button-primary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Gửi lời mời
+                    </button>
+                </div>
+            </form>
+        </section>
+    }
+</div>
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/operators-index.css" asp-append-version="true" />
+}

@@ -1,0 +1,48 @@
+@model BusGoSmartTicket.Models.ViewModels.PaymentExpiredViewModel
+@{
+    ViewData["Title"] = "Lượt giữ chỗ đã hết hạn - Smart Ticket";
+}
+
+<div class="checkout-expired-container">
+    <div class="expired-card">
+        <div class="expired-icon-circle">⏱️</div>
+        <p class="eyebrow" style="color: #c81d4a;">HẾT THỜI GIAN GIỮ CHỖ</p>
+        <h1>Lượt giữ ghế đã kết thúc</h1>
+        <p class="expired-desc">
+            @Model.Message
+        </p>
+
+        <div class="expired-help-box">
+            <div class="help-item">
+                <span class="help-num">1</span>
+                <div>
+                    <strong>Ghế đã được giải phóng</strong>
+                    <p>Nếu bạn chưa kịp thanh toán, bạn chỉ cần chọn lại chuyến và ghế để thực hiện giao dịch mới.</p>
+                </div>
+            </div>
+            <div class="help-item">
+                <span class="help-num">2</span>
+                <div>
+                    <strong>Nếu bạn đã chuyển khoản thành công</strong>
+                    <p>Hệ thống tự động đối soát dựa trên mã giao dịch. Vui lòng kiểm tra lại hộp thư email hoặc liên hệ tổng đài hỗ trợ <strong>1900 888 666</strong> để được trợ giúp ngay lập tức.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="expired-actions">
+            <a class="button button-primary button-wide" asp-controller="Home" asp-action="Index">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Tìm & Đặt chuyến xe mới
+            </a>
+            <a class="button button-outline button-wide" href="tel:1900888666">
+                📞 Gọi Tổng đài Hỗ trợ 24/7 (1900 888 666)
+            </a>
+        </div>
+    </div>
+</div>
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/payments-checkoutexpired.css" asp-append-version="true" />
+}

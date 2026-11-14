@@ -1,0 +1,44 @@
+/* Shared dimensions never depend on the selected colour theme. */
+:root { --radius:16px; --radius-sm:12px; --radius-pill:999px; --motion-ease:cubic-bezier(.2,0,.25,1); }
+.button,.button-primary,.button-outline,.button-secondary,.login-link,.logout-button,
+.search-submit,.btn-smt-primary,.btn-smt-outline,.btn-modal-checkout,.button-pay-submit {
+    border-radius:12px !important;
+    transition:background-color .2s ease,color .2s ease,border-color .2s ease,box-shadow .2s ease,transform .18s var(--motion-ease) !important;
+}
+.button:active,.login-link:active { transform:translateY(1px) !important; }
+.button:disabled,.button[aria-disabled="true"] { transform:none !important; cursor:not-allowed; opacity:.55; }
+.main-nav { border-radius:999px !important; gap:4px !important; padding:5px !important; max-width:100%; }
+.main-nav a { position:relative; border-radius:999px; padding:10px 18px; line-height:1.4; color:var(--ink) !important; background:transparent; transition:background-color .2s ease,color .2s ease,transform .18s var(--motion-ease) !important; }
+.main-nav a:hover,.main-nav a:focus-visible,.main-nav a.active,.main-nav a[aria-current="page"] { color:var(--btn-primary-text) !important; background:var(--btn-primary-bg) !important; -webkit-text-fill-color:currentColor; }
+.main-nav a:active { transform:scale(.98); }
+.login-link { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:10px 24px !important; color:var(--btn-primary-text) !important; }
+.lang-switch-pill { border-radius:999px !important; padding:3px; height:40px; }
+.lang-option { display:grid; place-items:center; height:32px; min-width:42px; padding:0 12px; border:1px solid transparent; border-radius:999px !important; }
+.theme-toggle-btn { position:relative; flex:0 0 40px; min-width:40px !important; max-width:40px; width:40px; height:40px; min-height:40px !important; border-radius:50% !important; overflow:hidden; box-shadow:none !important; }
+.theme-toggle-btn .theme-icon { display:block !important; position:absolute; width:19px; height:19px; inset:0; margin:auto; fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round; color:var(--ink) !important; transition:transform 440ms cubic-bezier(.34,1.56,.64,1),opacity 320ms ease; }
+.icon-moon { opacity:1; transform:rotate(0) scale(1); }
+.icon-sun { opacity:0; transform:rotate(-90deg) scale(.35); }
+[data-theme="dark"] .icon-moon { opacity:0; transform:rotate(90deg) scale(.35); }
+[data-theme="dark"] .icon-sun { opacity:1; transform:rotate(0) scale(1); }
+.theme-toggle-btn:hover { transform:scale(1.06); }
+.theme-toggle-btn:active { transform:scale(.95); }
+.swap-button { width:46px; height:46px; padding:0; }
+.swap-button svg { width:20px; height:20px; transition:transform 280ms var(--motion-ease); }
+.swap-button.is-swapping svg { transform:rotate(180deg); }
+.quick-dates button { min-height:36px; border-radius:8px; transition:background-color .18s ease,border-color .18s ease; }
+.quick-dates button[aria-pressed="true"] { background:var(--soft); border-color:var(--gold); color:var(--ink); }
+.destination-card img { transition:transform 300ms var(--motion-ease); }
+.destination-card { overflow:hidden; }
+.destination-card:hover img { transform:scale(1.025); }
+.merge-hero,.journey-search,.journey-results,.login-shell { animation:page-enter 280ms var(--motion-ease) both; }
+@keyframes page-enter { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.qr-modal-backdrop { animation:modal-backdrop-enter 160ms ease; }
+@keyframes modal-backdrop-enter { from { opacity:0; } to { opacity:1; } }
+html.is-theme-transitioning::view-transition-old(root),html.is-theme-transitioning::view-transition-new(root) { animation:none; mix-blend-mode:normal; }
+html.is-theme-transitioning::view-transition-new(root) { z-index:1; }
+html.is-theme-fallback body,html.is-theme-fallback .topbar,html.is-theme-fallback .journey-search { transition:background-color 300ms ease,color 300ms ease; }
+@media(max-width:1000px) { .main-nav { flex:0 1 auto !important; justify-content:flex-start; overflow-x:auto; } .main-nav a { padding:10px 14px; } }
+@media(prefers-reduced-motion:reduce) {
+    *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
+    ::view-transition-old(root),::view-transition-new(root) { animation:none !important; }
+}

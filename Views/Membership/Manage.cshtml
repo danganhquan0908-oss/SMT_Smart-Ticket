@@ -1,0 +1,16 @@
+@using BusGoSmartTicket.Models.Entities
+@model BusGoSmartTicket.Models.ViewModels.DiscountManagementViewModel
+@{ ViewData["Title"] = "Quản lý ưu đãi"; var campaigns = Model.Campaigns; }
+<div class="page-heading"><div><h1>Ưu đãi hội viên</h1><p>Mỗi ưu đãi áp dụng đúng một hạng. Không cộng dồn mức giảm.</p></div></div>
+<form class="form-card merge-form" method="post" action="/admin/discounts">
+    @Html.AntiForgeryToken()<div asp-validation-summary="All" class="text-danger"></div>
+    <label>Tên chương trình<input asp-for="Form.Name" required maxlength="100" /></label>
+    <label>Hạng hội viên<select asp-for="Form.Tier">@foreach(var tier in Enum.GetValues<MemberTier>()){<option value="@tier">@MembershipPolicy.Label(tier)</option>}</select></label>
+    <label>Mức giảm (%)<input asp-for="Form.Percent" type="number" min="0.01" max="99" step="0.01" required /></label>
+    <label>Bắt đầu (giờ Việt Nam)<input asp-for="Form.StartsAt" type="datetime-local" required /></label>
+    <label>Kết thúc (giờ Việt Nam)<input asp-for="Form.EndsAt" type="datetime-local" required /></label>
+    <button class="button button-primary">Tạo ưu đãi</button>
+</form>
+<div class="table-card table-scroll"><table><thead><tr><th>Chương trình</th><th>Hạng</th><th>Mức giảm</th><th>Kết thúc</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+@foreach(var c in campaigns){<tr><td>@c.Name</td><td>@MembershipPolicy.Label(c.Tier)</td><td>@c.Percent.ToString("0.##")%</td><td>@c.EndsAtUtc.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td><td>@(c.IsActive ? "Đang bật" : "Đã tắt")</td><td>@if(c.IsActive){<form method="post" action="/admin/discounts/@c.Id/deactivate">@Html.AntiForgeryToken()<button class="button button-outline">Ngừng áp dụng</button></form>}</td></tr>}
+</tbody></table></div>

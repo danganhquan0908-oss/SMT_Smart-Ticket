@@ -1,0 +1,151 @@
+@model IReadOnlyList<BusGoSmartTicket.Models.DTOs.Catalog.BusRouteDto>
+@{
+    ViewData["Title"] = "Quản lý Tuyến đường - Smart Ticket";
+    var totalCount = Model.Count;
+    var activeCount = Model.Count(x => x.IsActive);
+    var inactiveCount = totalCount - activeCount;
+}
+
+<div class="admin-page-container">
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">QUẢN LÝ BẾN XE VÀ TUYẾN ĐƯỜNG</p>
+            <h1>Quản lý Tuyến đường Vận tải</h1>
+            <p>Kết nối hai bến xe hợp pháp thành tuyến đường liên tỉnh để các nhà xe đăng ký nốt chạy.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="button button-outline" asp-controller="Home" asp-action="Index">← Trang chủ</a>
+            <a class="button button-primary" asp-action="Create">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Tạo tuyến đường mới
+            </a>
+        </div>
+    </div>
+
+    @await Html.PartialAsync("_Feedback")
+
+    <!-- THẺ THỐNG KÊ NHANH -->
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+        <div class="metric-card">
+            <div class="metric-icon crimson">🛣️</div>
+            <div>
+                <span>Tổng số tuyến đường</span>
+                <strong>@totalCount</strong>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background: #eaf8f2; color: #14724f;">✓</div>
+            <div>
+                <span>Đang khai thác</span>
+                <strong style="color: #14724f;">@activeCount</strong>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon" style="background: #f2f0f2; color: #77717c;">⏸</div>
+            <div>
+                <span>Tạm dừng</span>
+                <strong style="color: #77717c;">@inactiveCount</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- BẢNG DANH MỤC TUYẾN ĐƯỜNG -->
+    <div class="table-card">
+        <div class="table-toolbar">
+            <div>
+                <strong>Danh sách các tuyến xe liên tỉnh</strong>
+                <span>(Ràng buộc duy nhất `UNIQUE(Bến đi, Bến đến)` · Cache 24h)</span>
+            </div>
+            <div>
+                <input type="text" id="route-filter" placeholder="Lọc theo bến đi, bến đến..." class="input-filter-table" onkeyup="filterRoutes()" />
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table id="routes-table">
+                <thead>
+                    <tr>
+                        <th>Hành trình kết nối (Bến đi → Bến đến)</th>
+                        <th style="width: 160px;">Khoảng cách (km)</th>
+                        <th style="width: 180px;">Thời lượng dự kiến</th>
+                        <th style="width: 150px;">Trạng thái</th>
+                        <th class="actions-col" style="width: 180px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var route in Model)
+                    {
+                        <tr>
+                            <td class="primary-cell">
+                                <div class="route-display-box">
+                                    <span class="station-node from">@route.DepartureStation</span>
+                                    <span class="route-arrow">➔</span>
+                                    <span class="station-node to">@route.ArrivalStation</span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>@route.DistanceKm.ToString("N0")</strong> <small style="color: var(--muted, #777486);">km</small>
+                            </td>
+                            <td>
+                                <strong>@route.EstimatedHours</strong> <small style="color: var(--muted, #777486);">tiếng di chuyển</small>
+                            </td>
+                            <td>
+                                @if (route.IsActive)
+                                {
+                                    <span class="status status-active">Đang hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="status status-inactive">Đã ngừng</span>
+                                }
+                            </td>
+                            <td class="actions-col">
+                                <div class="row-actions">
+                                    <a asp-action="Edit" asp-route-id="@route.Id" class="action-btn edit-btn">Sửa tuyến</a>
+                                    <span class="sep">·</span>
+
+                                    @if (route.IsActive)
+                                    {
+                                        <form asp-action="Deactivate" asp-route-id="@route.Id" method="post" style="display: inline;" onsubmit="return confirm('Ngừng hoạt động tuyến đường này? Chỉ có thể ngừng khi không có chuyến Scheduled/Running.');">
+                                            <button type="submit" class="action-btn text-danger">Ngừng</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Reactivate" asp-route-id="@route.Id" method="post" style="display: inline;">
+                                            <button type="submit" class="action-btn text-success">Khôi phục</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div style="font-size: 32px; margin-bottom: 8px;">🛣️</div>
+                                <strong>Chưa có tuyến đường nào được thiết lập.</strong>
+                                <p style="margin: 6px 0 16px; font-size: 13px; color: var(--muted, #777486);">Cần có ít nhất 2 bến xe đang hoạt động để tạo tuyến đường đầu tiên.</p>
+                                <a asp-action="Create" class="button button-primary" style="display: inline-flex;">+ Tạo tuyến đường mới</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/admin-routes-index.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/pages/admin-routes-index.js" asp-append-version="true"></script>
+}

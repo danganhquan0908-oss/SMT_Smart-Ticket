@@ -1,39 +1,45 @@
+# Local configuration and private uploads
+.env
+.env.*
+!.env.example
+appsettings.Local*.json
+appsettings.*.local.json
+App_Data/
+*.pfx
+*.pem
+*.key
+TAI_KHOAN_DANG_NHAP*.md
+
+# Build output, IDE state and downloaded runtimes
 **/bin/
 **/obj/
+node_modules/
 .vs/
 .idea/
 .vscode/
+.local/
 .tools/
 *.user
 *.suo
+*.log
 *.db
 *.db-shm
 *.db-wal
-.env
-src/SmartTicket.Web/App_Data/operator-licenses/
-src/SmartTicket.Web/appsettings.Development.json
-*.pfx
+*.dump
+*.zip
 
-# Build & scratch artifacts
-build.log
-query
-seats-build/
-seed-build/
-src/Smart Ticket/
-
-# Internal documentation & PRD
-hop hoan thien PRD.md
-t_i_li_u_prd_website_b_n_v_xe_kh_ch.md
-đồ họa.md
+# Agent work, reports and test artifacts
+.codex/
+.agents/
+.claude/
+.cursor/
 AGENTS.md
-README.md
-index.html
-tests/SmartTicket.LoadTests/README.md
-
-# Logos & image assets
-logo mới tách nền.png
-src/SmartTicket.Web/wwwroot/images/
-src/SmartTicket.Web/wwwroot/favicon.ico
-src/SmartTicket.Web/wwwroot/favicon.png
-
-
+CLAUDE.md
+work/
+outputs/
+tests/
+TestResults/
+playwright-report/
+test-results/
+__pycache__/
+*.pyc

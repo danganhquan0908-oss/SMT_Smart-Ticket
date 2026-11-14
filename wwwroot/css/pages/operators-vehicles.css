@@ -1,0 +1,32 @@
+.vehicles-page { max-width: 1280px; margin: 0 auto; }
+.vehicle-layout-grid {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.85fr); gap: 24px; align-items: start;
+}
+.vehicle-form-card { max-width: 100%; padding: 28px; }
+
+.plate-preview-badge {
+    height: 43px; display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; border: 2px solid #1a162b; border-radius: 8px;
+    padding: 0 16px; box-shadow: 0 3px 8px rgba(0,0,0,0.08); font-family: monospace;
+}
+.plate-dot { color: #c81d4a; font-size: 8px; }
+#platePreviewText { font-size: 15px; font-weight: 800; color: #1a162b; letter-spacing: 1px; }
+
+.vn-plate {
+    display: inline-block; padding: 4px 10px; background: #fff; border: 1.5px solid #1a162b;
+    border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 800;
+    color: #1a162b; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.template-name-tag {
+    font-size: 11px; background: #f2edff; color: #5e17eb; padding: 3px 8px;
+    border-radius: 6px; font-weight: 600;
+}
+
+.edit-btn { background: #f2edff; color: #5e17eb; }
+.edit-btn:hover { background: #5e17eb; color: #fff; }
+.deactivate-btn { background: #fff0f3; color: #c81d4a; }
+.deactivate-btn:hover { background: #c81d4a; color: #fff; }
+
+@media (max-width: 900px) {
+    .vehicle-layout-grid { grid-template-columns: 1fr; }
+}
