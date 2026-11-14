@@ -98,7 +98,7 @@
             <div class="account-area">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <a asp-controller="Account" asp-action="Profile" class="user-chip-link" title="Xem hồ sơ cá nhân">
+                    <a asp-controller="Account" asp-action="Profile" class="user-chip-link" title="Xem hồ sơ cá nhân" data-i18n-title="nav_profile_tooltip">
                         <span class="admin-label"><i></i> @User.Identity.Name</span>
                     </a>
                     <form asp-controller="Account" asp-action="Logout" method="post">

@@ -6,15 +6,15 @@
 <div class="tickets-page-shell">
     <div class="tickets-hero-banner">
         <div>
-            <span class="eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
-            <h1>Vé xe của tôi</h1>
-            <p class="muted">Toàn bộ vé xe điện tử và lịch sử đặt chỗ của bạn được lưu trữ an toàn tại đây.</p>
+            <span class="eyebrow" data-i18n="tickets_hero_eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
+            <h1 data-i18n="tickets_hero_title">Vé xe của tôi</h1>
+            <p class="muted" data-i18n="tickets_hero_subtitle">Toàn bộ vé xe điện tử và lịch sử đặt chỗ của bạn được lưu trữ an toàn tại đây.</p>
         </div>
         <div class="tickets-hero-actions">
-            <a class="button button-outline" asp-controller="Account" asp-action="Profile">
+            <a class="button button-outline" asp-controller="Account" asp-action="Profile" data-i18n="tickets_btn_edit_profile">
                 👤 Cập nhật hồ sơ
             </a>
-            <a class="button button-primary" asp-controller="Home" asp-action="Index">
+            <a class="button button-primary" asp-controller="Home" asp-action="Index" data-i18n="tickets_btn_find_trip">
                 🔍 Tìm chuyến xe mới →
             </a>
         </div>
@@ -23,13 +23,13 @@
     <!-- TABS ĐIỀU HƯỚNG TRẠNG THÁI VÉ -->
     <div class="tickets-tabs-nav" role="tablist">
         <button type="button" class="tab-pill active" onclick="switchTab('upcoming', this)">
-            🚌 Sắp khởi hành <span class="tab-badge">@Model.Upcoming.Count</span>
+            <span data-i18n="tickets_tab_upcoming">🚌 Sắp khởi hành</span> <span class="tab-badge">@Model.Upcoming.Count</span>
         </button>
         <button type="button" class="tab-pill" onclick="switchTab('pending', this)">
-            ⏱️ Chờ thanh toán <span class="tab-badge badge-amber">@Model.Pending.Count</span>
+            <span data-i18n="tickets_tab_pending">⏱️ Chờ thanh toán</span> <span class="tab-badge badge-amber">@Model.Pending.Count</span>
         </button>
         <button type="button" class="tab-pill" onclick="switchTab('history', this)">
-            📜 Lịch sử chuyến đi <span class="tab-badge badge-muted">@Model.History.Count</span>
+            <span data-i18n="tickets_tab_history">📜 Lịch sử chuyến đi</span> <span class="tab-badge badge-muted">@Model.History.Count</span>
         </button>
     </div>
 
@@ -39,9 +39,9 @@
         {
             <div class="empty-bookings-box">
                 <div class="empty-icon">🎟️</div>
-                <h3>Bạn chưa có vé xe nào sắp khởi hành</h3>
-                <p class="muted">Hãy đặt chuyến xe mới để trải nghiệm dịch vụ xe khách chất lượng cao liên tỉnh.</p>
-                <a class="button button-primary mt-2" asp-controller="Home" asp-action="Index">Đặt vé ngay bây giờ</a>
+                <h3 data-i18n="tickets_empty_upcoming_title">Bạn chưa có vé xe nào sắp khởi hành</h3>
+                <p class="muted" data-i18n="tickets_empty_upcoming_desc">Hãy đặt chuyến xe mới để trải nghiệm dịch vụ xe khách chất lượng cao liên tỉnh.</p>
+                <a class="button button-primary mt-2" asp-controller="Home" asp-action="Index" data-i18n="tickets_empty_btn">Đặt vé ngay bây giờ</a>
             </div>
         }
         else
@@ -52,32 +52,32 @@
                     var depLocal = b.DepartureTimeUtc.AddHours(7);
                     <div class="booking-ticket-card">
                         <div class="card-top-row">
-                            <span class="badge-status-paid">✓ ĐÃ THANH TOÁN</span>
-                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                            <span class="badge-status-paid" data-i18n="badge_paid_confirmed">✓ ĐÃ THANH TOÁN</span>
+                            <span class="booking-code-tag"><span data-i18n="label_booking_code">MÃ:</span> <strong>STKT@(b.BookingCode)</strong></span>
                         </div>
                         <div class="card-route-title">
                             <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
                         </div>
                         <div class="card-meta-row">
                             <div class="meta-item">
-                                <span class="m-label">Khởi hành:</span>
+                                <span class="m-label" data-i18n="label_departure_time">Khởi hành:</span>
                                 <strong class="m-val text-gold">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Nhà xe:</span>
+                                <span class="m-label" data-i18n="label_bus_operator">Nhà xe:</span>
                                 <strong class="m-val">@b.OperatorName</strong>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Ghế đã đặt:</span>
+                                <span class="m-label" data-i18n="label_booked_seats">Ghế đã đặt:</span>
                                 <strong class="m-val seat-chips">@string.Join(", ", b.SeatCodes)</strong>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Tổng tiền:</span>
+                                <span class="m-label" data-i18n="label_total_paid">Tổng tiền:</span>
                                 <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
                             </div>
                         </div>
                         <div class="card-action-bar">
-                            <a class="button button-primary button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                            <a class="button button-primary button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId" data-i18n="btn_view_eticket_qr">
                                 📱 Xem vé & Mã QR lên xe
                             </a>
                         </div>
@@ -93,8 +93,8 @@
         {
             <div class="empty-bookings-box">
                 <div class="empty-icon">✓</div>
-                <h3>Không có đơn đặt chỗ nào đang chờ thanh toán</h3>
-                <p class="muted">Tất cả các đơn đặt vé của bạn đều đã được hoàn tất hoặc giải phóng ghế an toàn.</p>
+                <h3 data-i18n="tickets_empty_pending_title">Không có đơn đặt chỗ nào đang chờ thanh toán</h3>
+                <p class="muted" data-i18n="tickets_empty_pending_desc">Tất cả các đơn đặt vé của bạn đều đã được hoàn tất hoặc giải phóng ghế an toàn.</p>
             </div>
         }
         else
@@ -105,37 +105,37 @@
                     var depLocal = b.DepartureTimeUtc.AddHours(7);
                     <div class="booking-ticket-card card-pending" id="booking-card-@b.BookingId" data-booking-id="@b.BookingId" data-expires="@b.ExpiresAtUtc.ToString("o")">
                         <div class="card-top-row">
-                            <span class="badge-status-pending booking-countdown-pill" data-expires="@b.ExpiresAtUtc.ToString("o")">⏱️ Đang tính giờ...</span>
-                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                            <span class="badge-status-pending booking-countdown-pill" data-expires="@b.ExpiresAtUtc.ToString("o")" data-i18n="badge_calculating">⏱️ Đang tính giờ...</span>
+                            <span class="booking-code-tag"><span data-i18n="label_booking_code">MÃ:</span> <strong>STKT@(b.BookingCode)</strong></span>
                         </div>
                         <div class="card-route-title">
                             <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
                         </div>
                         <div class="card-meta-row">
                             <div class="meta-item">
-                                <span class="m-label">Khởi hành:</span>
+                                <span class="m-label" data-i18n="label_departure_time">Khởi hành:</span>
                                 <strong class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</strong>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Ghế giữ chỗ:</span>
+                                <span class="m-label" data-i18n="label_held_seats">Ghế giữ chỗ:</span>
                                 <strong class="m-val">@string.Join(", ", b.SeatCodes)</strong>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Tổng tiền cần CK:</span>
+                                <span class="m-label" data-i18n="label_total_due">Tổng tiền cần CK:</span>
                                 <strong class="m-val text-crimson font-large">@b.TotalAmount.ToString("N0") ₫</strong>
                             </div>
                         </div>
                         <div class="card-action-bar pending-actions-bar">
                             <div class="ref-copy-wrap">
-                                <span class="text-muted small">Nội dung: <strong class="ref-code">STKT@(b.BookingCode)</strong></span>
-                                <button type="button" class="btn-copy-chip btn-copy-inline" data-copy="STKT@(b.BookingCode)">Sao chép</button>
+                                <span class="text-muted small"><span data-i18n="label_transfer_note">Nội dung:</span> <strong class="ref-code">STKT@(b.BookingCode)</strong></span>
+                                <button type="button" class="btn-copy-chip btn-copy-inline" data-copy="STKT@(b.BookingCode)" data-i18n="btn_copy_inline">Sao chép</button>
                             </div>
                             <button type="button" class="button-pay-submit btn-resume-pay"
                                     data-booking-id="@b.BookingId"
                                     data-booking-code="@b.BookingCode"
                                     data-amount="@b.TotalAmount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
                                     data-expires="@b.ExpiresAtUtc.ToString("o")">
-                                <span>⚡ Tiếp tục thanh toán VietQR</span>
+                                <span data-i18n="btn_resume_pay">⚡ Tiếp tục thanh toán VietQR</span>
                                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                             </button>
                         </div>
@@ -151,8 +151,8 @@
         {
             <div class="empty-bookings-box">
                 <div class="empty-icon">📜</div>
-                <h3>Chưa có lịch sử chuyến đi cũ</h3>
-                <p class="muted">Các chuyến xe đã hoàn thành hoặc hết hạn sẽ được lưu trữ tại đây.</p>
+                <h3 data-i18n="tickets_empty_history_title">Chưa có lịch sử chuyến đi cũ</h3>
+                <p class="muted" data-i18n="tickets_empty_history_desc">Các chuyến xe đã hoàn thành hoặc hết hạn sẽ được lưu trữ tại đây.</p>
             </div>
         }
         else
@@ -166,48 +166,48 @@
                         <div class="card-top-row">
                             @if (b.Status == "PaidOverdueUnassigned")
                             {
-                                <span class="badge-status-warning">⚠️ THANH TOÁN TRỄ (GHẾ ĐÃ BÁN)</span>
+                                <span class="badge-status-warning" data-i18n="badge_overdue_sold">⚠️ THANH TOÁN TRỄ (GHẾ ĐÃ BÁN)</span>
                             }
                             else
                             {
-                                <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")">
+                                <span class="@(isPaid ? "badge-status-history" : "badge-status-expired")" data-i18n="@(isPaid ? "badge_completed" : "badge_expired")">
                                     @(isPaid ? "✓ ĐÃ HOÀN THÀNH" : "✕ ĐÃ HẾT HẠN")
                                 </span>
                             }
-                            <span class="booking-code-tag">MÃ: <strong>STKT@(b.BookingCode)</strong></span>
+                            <span class="booking-code-tag"><span data-i18n="label_booking_code">MÃ:</span> <strong>STKT@(b.BookingCode)</strong></span>
                         </div>
                         <div class="card-route-title">
                             <h3>@b.DepartureStation <span class="route-arrow">→</span> @b.ArrivalStation</h3>
                         </div>
                         <div class="card-meta-row">
                             <div class="meta-item">
-                                <span class="m-label">Khởi hành:</span>
+                                <span class="m-label" data-i18n="label_departure_time">Khởi hành:</span>
                                 <span class="m-val">@depLocal.ToString("HH:mm · dd/MM/yyyy")</span>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Nhà xe:</span>
+                                <span class="m-label" data-i18n="label_bus_operator">Nhà xe:</span>
                                 <span class="m-val">@b.OperatorName</span>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Ghế:</span>
+                                <span class="m-label" data-i18n="label_history_seats">Ghế:</span>
                                 <span class="m-val">@string.Join(", ", b.SeatCodes)</span>
                             </div>
                             <div class="meta-item">
-                                <span class="m-label">Tổng tiền:</span>
+                                <span class="m-label" data-i18n="label_total_paid">Tổng tiền:</span>
                                 <span class="m-val">@b.TotalAmount.ToString("N0") ₫</span>
                             </div>
                         </div>
                         @if (b.Status == "PaidOverdueUnassigned")
                         {
                             <div class="overdue-notice-box">
-                                <strong>⚠️ Giao dịch chuyển tiền sau khi hết hạn giữ chỗ:</strong>
-                                <p>Hệ thống đã nhận thanh toán nhưng ghế đã bị bán cho khách khác sau khi hết hạn 7 phút. Vui lòng liên hệ hotline tổng đài <strong>1900 6868</strong> để được xếp chuyến tương đương hoặc hoàn tiền 100%.</p>
+                                <strong data-i18n="overdue_alert_title">⚠️ Giao dịch chuyển tiền sau khi hết hạn giữ chỗ:</strong>
+                                <p data-i18n-html="overdue_alert_desc">Hệ thống đã nhận thanh toán nhưng ghế đã bị bán cho khách khác sau khi hết hạn 7 phút. Vui lòng liên hệ hotline tổng đài <strong>1900 6868</strong> để được xếp chuyến tương đương hoặc hoàn tiền 100%.</p>
                             </div>
                         }
                         @if (isPaid && b.Tickets.Count > 0)
                         {
                             <div class="card-action-bar">
-                                <a class="button button-outline button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId">
+                                <a class="button button-outline button-wide" asp-controller="Account" asp-action="TicketDetails" asp-route-bookingId="@b.BookingId" data-i18n="btn_review_eticket">
                                     Xem lại vé điện tử & In PDF
                                 </a>
                             </div>
@@ -220,15 +220,15 @@
     <!-- MODAL VIETQR POPUP TRỰC TIẾP TRÊN TRANG (FROSTED GLASS) -->
     <div id="qr-modal-backdrop" class="qr-modal-backdrop" style="display: none;">
         <div class="qr-modal-card">
-            <button type="button" class="btn-close-modal" id="btn-close-modal" title="Đóng cửa sổ">✕</button>
+            <button type="button" class="btn-close-modal" id="btn-close-modal" title="Đóng cửa sổ" data-i18n-title="modal_close_title">✕</button>
             
             <div class="modal-header">
                 <div class="modal-badge-row">
                     <span class="badge-vietqr-brand">⚡ VietQR · Napas 247 · <span id="modal-bank-title">@(ViewBag.BankName ?? "VietinBank")</span></span>
                     <span class="badge-modal-timer" id="modal-countdown-badge">⏱️ 07:00</span>
                 </div>
-                <h2 class="modal-title">Quét Mã VietQR Tiếp Tục Thanh Toán</h2>
-                <p class="modal-subtitle">Mở ứng dụng Ngân hàng bất kỳ hoặc MoMo/VNPay để quét mã thanh toán 1-chạm</p>
+                <h2 class="modal-title" data-i18n="modal_resume_title">Quét Mã VietQR Tiếp Tục Thanh Toán</h2>
+                <p class="modal-subtitle" data-i18n="modal_resume_subtitle">Mở ứng dụng Ngân hàng bất kỳ hoặc MoMo/VNPay để quét mã thanh toán 1-chạm</p>
             </div>
 
             <div class="modal-body-layout">
@@ -238,13 +238,13 @@
                         <img id="modal-qr-image" src="" alt="Mã VietQR" />
                         <div id="modal-qr-overlay-expired" class="modal-expired-overlay" style="display: none;">
                             <span class="expired-icon">⚠️</span>
-                            <h4>Hết hạn giữ chỗ 7 phút</h4>
-                            <p>Thời gian giữ chỗ đã hết, ghế đã được tự động giải phóng.</p>
+                            <h4 data-i18n="modal_expired_title_short">Hết hạn giữ chỗ 7 phút</h4>
+                            <p data-i18n="modal_expired_desc_short">Thời gian giữ chỗ đã hết, ghế đã được tự động giải phóng.</p>
                         </div>
                     </div>
                     <div class="modal-lock-tag">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <span>Số tiền đã khóa cứng (EMVCo Tag 54)</span>
+                        <span data-i18n="modal_lock_tag">Số tiền đã khóa cứng (EMVCo Tag 54)</span>
                     </div>
                 </div>
 
@@ -252,32 +252,32 @@
                 <div class="modal-info-column">
                     <div class="modal-specs-box">
                         <div class="modal-spec-row">
-                            <span class="m-label">Ngân hàng thụ hưởng:</span>
+                            <span class="m-label" data-i18n="modal_bank_label">Ngân hàng thụ hưởng:</span>
                             <strong class="m-val" id="modal-bank-name">@(ViewBag.BankName ?? "VietinBank (Napas 247)")</strong>
                         </div>
                         <div class="modal-spec-row">
-                            <span class="m-label">Số tài khoản:</span>
+                            <span class="m-label" data-i18n="modal_acc_label">Số tài khoản:</span>
                             <div class="m-val-wrap">
                                 <strong class="m-val font-mono" id="modal-account-num">@(ViewBag.AccountNumber ?? "")</strong>
-                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-acc">Sao chép</button>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-acc" data-i18n="btn_copy_inline">Sao chép</button>
                             </div>
                         </div>
                         <div class="modal-spec-row">
-                            <span class="m-label">Chủ tài khoản:</span>
+                            <span class="m-label" data-i18n="modal_name_label">Chủ tài khoản:</span>
                             <strong class="m-val" id="modal-account-name">@(ViewBag.AccountName ?? "")</strong>
                         </div>
                         <div class="modal-spec-row">
-                            <span class="m-label">Số tiền:</span>
+                            <span class="m-label" data-i18n="modal_amount_label">Số tiền:</span>
                             <div class="m-val-wrap">
                                 <strong class="m-val text-crimson font-large" id="modal-amount-display">0 ₫</strong>
-                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-amount">Sao chép</button>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-amount" data-i18n="btn_copy_inline">Sao chép</button>
                             </div>
                         </div>
                         <div class="modal-spec-row highlight-spec">
-                            <span class="m-label">Nội dung CK:</span>
+                            <span class="m-label" data-i18n="modal_ref_label">Nội dung CK:</span>
                             <div class="m-val-wrap">
                                 <strong class="m-val font-mono text-gold" id="modal-ref-display">STKT...</strong>
-                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-ref">Sao chép</button>
+                                <button type="button" class="btn-copy-chip" id="btn-modal-copy-ref" data-i18n="btn_copy_inline">Sao chép</button>
                             </div>
                         </div>
                     </div>
@@ -285,15 +285,15 @@
                     <div class="modal-status-badge" id="modal-status-box">
                         <div class="status-pulse-dot"></div>
                         <div class="status-text-content">
-                            <strong id="modal-status-title">Đang chờ bạn quét mã thanh toán...</strong>
-                            <p id="modal-status-desc">Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.</p>
+                            <strong id="modal-status-title" data-i18n="modal_status_wait_title">Đang chờ bạn quét mã thanh toán...</strong>
+                            <p id="modal-status-desc" data-i18n="modal_status_wait_desc">Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.</p>
                         </div>
                     </div>
 
                     <div class="modal-actions-col">
                         @if (ViewBag.IsDev == true)
                         {
-                            <button type="button" class="btn-modal-dev" id="btn-modal-dev-simulate">
+                            <button type="button" class="btn-modal-dev" id="btn-modal-dev-simulate" data-i18n="modal_btn_dev_simulate">
                                 ⚡ Giả lập thanh toán thành công (Môi trường Dev)
                             </button>
                         }
@@ -323,8 +323,10 @@ function switchTab(tabId, btn) {
             if (text) {
                 navigator.clipboard.writeText(text);
                 const old = btn.textContent;
-                btn.textContent = '✓ Đã chép';
-                setTimeout(() => btn.textContent = old, 2000);
+                btn.textContent = window.SMT ? window.SMT.t('btn_copied_inline') : '✓ Đã chép';
+                setTimeout(() => {
+                    btn.textContent = window.SMT ? window.SMT.t('btn_copy_inline') : old;
+                }, 2000);
             }
         });
     });
@@ -341,7 +343,7 @@ function switchTab(tabId, btn) {
             const btn = card ? card.querySelector('.btn-resume-pay') : null;
 
             if (diffSec <= 0) {
-                el.textContent = '✕ ĐÃ HẾT HẠN GIỮ CHỖ';
+                el.textContent = window.SMT ? window.SMT.t('countdown_hold_expired') : '✕ ĐÃ HẾT HẠN GIỮ CHỖ';
                 el.classList.remove('critical');
                 el.classList.add('expired');
                 if (card) {
@@ -349,12 +351,13 @@ function switchTab(tabId, btn) {
                 }
                 if (btn) {
                     btn.disabled = true;
-                    btn.innerHTML = '<span>Đã hết hạn giữ chỗ</span>';
+                    btn.innerHTML = `<span>${window.SMT ? window.SMT.t('btn_hold_expired') : 'Đã hết hạn giữ chỗ'}</span>`;
                 }
             } else {
                 const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
                 const secs = String(diffSec % 60).padStart(2, '0');
-                el.textContent = `⏱️ GIỮ CHỖ CÒN: ${mins}:${secs}`;
+                const prefix = window.SMT ? window.SMT.t('countdown_hold_remaining') : '⏱️ GIỮ CHỖ CÒN:';
+                el.textContent = `${prefix} ${mins}:${secs}`;
                 if (diffSec <= 120) {
                     el.classList.add('critical');
                 } else {
@@ -365,6 +368,10 @@ function switchTab(tabId, btn) {
     }
     setInterval(updateCardCountdowns, 1000);
     updateCardCountdowns();
+
+    window.addEventListener('smt:languagechange', () => {
+        updateCardCountdowns();
+    });
 
     // Quản lý Modal VietQR
     let currentBookingId = null;
@@ -405,8 +412,8 @@ function switchTab(tabId, btn) {
         modalAmountEl.textContent = Number(amount).toLocaleString('vi-VN') + ' ₫';
         modalRefEl.textContent = refText;
         modalExpiredOverlay.style.display = modalRemaining <= 0 ? 'flex' : 'none';
-        modalStatusTitle.textContent = "Đang chờ bạn quét mã thanh toán...";
-        modalStatusDesc.textContent = "Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.";
+        modalStatusTitle.textContent = window.SMT ? window.SMT.t('modal_status_wait_title') : "Đang chờ bạn quét mã thanh toán...";
+        modalStatusDesc.textContent = window.SMT ? window.SMT.t('modal_status_wait_desc') : "Hệ thống tự động kích hoạt vé ngay khi giao dịch thành công.";
         modalStatusTitle.style.color = "var(--ink, #fff)";
 
         // Fast fallback image từ Napas VietQR CDN
@@ -479,9 +486,9 @@ function switchTab(tabId, btn) {
     const onPaymentSuccess = () => {
         clearInterval(modalTimer);
         clearInterval(modalPollTimer);
-        modalStatusTitle.textContent = "✓ Thanh toán thành công!";
+        modalStatusTitle.textContent = window.SMT ? window.SMT.t('modal_status_success_title') : "✓ Thanh toán thành công!";
         modalStatusTitle.style.color = "#10b981";
-        modalStatusDesc.textContent = "Hệ thống đã nhận thanh toán. Đang chuyển tới danh sách vé...";
+        modalStatusDesc.textContent = window.SMT ? window.SMT.t('modal_status_success_desc') : "Hệ thống đã nhận thanh toán. Đang chuyển tới danh sách vé...";
         setTimeout(() => {
             window.location.reload();
         }, 1000);
@@ -524,8 +531,10 @@ function switchTab(tabId, btn) {
                 if (text) {
                     navigator.clipboard.writeText(text);
                     const old = el.textContent;
-                    el.textContent = '✓ Đã chép';
-                    setTimeout(() => el.textContent = old, 2000);
+                    el.textContent = window.SMT ? window.SMT.t('btn_copied_inline') : '✓ Đã chép';
+                    setTimeout(() => {
+                        el.textContent = window.SMT ? window.SMT.t('btn_copy_inline') : old;
+                    }, 2000);
                 }
             });
         }

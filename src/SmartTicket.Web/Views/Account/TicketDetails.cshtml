@@ -8,24 +8,24 @@
 <div class="tickets-page-container">
     <div class="ticket-page-header no-print">
         <div class="header-left">
-            <span class="booking-verified-badge">✓ ĐÃ XÁC NHẬN CHÍNH CHỦ</span>
-            <h1>Vé Xe Khách Điện Tử (E-Ticket)</h1>
+            <span class="booking-verified-badge" data-i18n="detail_verified_badge">✓ ĐÃ XÁC NHẬN CHÍNH CHỦ</span>
+            <h1 data-i18n="detail_page_title">Vé Xe Khách Điện Tử (E-Ticket)</h1>
             <p class="ticket-subtitle">
-                <span>Mã đặt chỗ:</span> <strong class="booking-code-highlight">STKT@(Model.BookingCode)</strong> · 
-                <span>Số lượng:</span> <strong>@Model.Tickets.Count vé</strong> · 
-                <span>Nhà xe:</span> <strong>@Model.OperatorName</strong>
+                <span data-i18n="detail_code_label">Mã đặt chỗ:</span> <strong class="booking-code-highlight">STKT@(Model.BookingCode)</strong> · 
+                <span data-i18n="detail_count_label">Số lượng:</span> <strong>@Model.Tickets.Count <span data-i18n="detail_tickets_suffix">vé</span></strong> · 
+                <span data-i18n="detail_operator_label">Nhà xe:</span> <strong>@Model.OperatorName</strong>
             </p>
         </div>
 
         <div class="header-actions">
-            <a class="button button-outline" asp-controller="Account" asp-action="Tickets">
+            <a class="button button-outline" asp-controller="Account" asp-action="Tickets" data-i18n="detail_btn_back">
                 ← Vé của tôi
             </a>
             <button type="button" class="button button-outline" onclick="window.print()">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
-                <span>In vé / Lưu PDF</span>
+                <span data-i18n="detail_btn_print">In vé / Lưu PDF</span>
             </button>
-            <a class="button button-primary" asp-controller="Home" asp-action="Index">
+            <a class="button button-primary" asp-controller="Home" asp-action="Index" data-i18n="detail_btn_rebook">
                 Đặt thêm chuyến khác →
             </a>
         </div>
@@ -35,8 +35,8 @@
     {
         <div class="empty-state">
             <div class="empty-symbol">🎟️</div>
-            <strong>Chưa có vé nào được phát hành</strong>
-            <p>Đơn đặt chỗ này chưa hoàn tất thanh toán hoặc đang được hệ thống đối soát. Vui lòng kiểm tra lại sau ít phút.</p>
+            <strong data-i18n="detail_empty_title">Chưa có vé nào được phát hành</strong>
+            <p data-i18n="detail_empty_desc">Đơn đặt chỗ này chưa hoàn tất thanh toán hoặc đang được hệ thống đối soát. Vui lòng kiểm tra lại sau ít phút.</p>
         </div>
     }
     else
@@ -53,48 +53,48 @@
                                 <span class="logo-box">SMT</span>
                                 <div>
                                     <strong class="ticket-corp-name">SMART TICKET</strong>
-                                    <small class="ticket-corp-sub">VÉ ĐIỆN TỬ HỢP PHÁP · @Model.OperatorName</small>
+                                    <small class="ticket-corp-sub"><span data-i18n="detail_legal_sub">VÉ ĐIỆN TỬ HỢP PHÁP</span> · @Model.OperatorName</small>
                                 </div>
                             </div>
                             <div class="ticket-num-badge">
-                                <span>SỐ VÉ:</span>
+                                <span data-i18n="detail_ticket_num_label">SỐ VÉ:</span>
                                 <strong>#@ticket.TicketNumber</strong>
                             </div>
                         </div>
 
                         <div class="ticket-journey-row">
                             <div class="journey-station">
-                                <span class="station-lbl">LỘ TRÌNH CHUYẾN ĐI</span>
+                                <span class="station-lbl" data-i18n="detail_route_label">LỘ TRÌNH CHUYẾN ĐI</span>
                                 <h2 class="journey-name">@Model.DepartureStation → @Model.ArrivalStation</h2>
                             </div>
                         </div>
 
                         <div class="ticket-meta-grid">
                             <div class="meta-cell">
-                                <span class="cell-label">GIỜ KHỞI HÀNH</span>
+                                <span class="cell-label" data-i18n="detail_dep_label">GIỜ KHỞI HÀNH</span>
                                 <strong class="cell-val time-val">@depLocal.ToString("HH:mm")</strong>
                                 <small class="cell-date">@depLocal.ToString("dd/MM/yyyy")</small>
                             </div>
 
                             <div class="meta-cell seat-cell">
-                                <span class="cell-label">SỐ GHẾ</span>
+                                <span class="cell-label" data-i18n="detail_seat_label">SỐ GHẾ</span>
                                 <div class="seat-badge-pill">@ticket.SeatCode</div>
                             </div>
 
                             <div class="meta-cell">
-                                <span class="cell-label">GIÁ VÉ NIÊM YẾT</span>
+                                <span class="cell-label" data-i18n="detail_fare_label">GIÁ VÉ NIÊM YẾT</span>
                                 <strong class="cell-val price-val">@ticket.Price.ToString("N0") ₫</strong>
-                                <small class="vat-sub">(Đã gồm thuế & bảo hiểm)</small>
+                                <small class="vat-sub" data-i18n="detail_vat_note">(Đã gồm thuế & bảo hiểm)</small>
                             </div>
 
                             <div class="meta-cell">
-                                <span class="cell-label">LOẠI XE</span>
+                                <span class="cell-label" data-i18n="detail_vehicle_type_label">LOẠI XE</span>
                                 <strong class="cell-val">@Model.VehicleType</strong>
                             </div>
                         </div>
 
                         <div class="ticket-footer-legal">
-                            <span>🛡️ Vé điện tử có giá trị tương đương vé giấy truyền thống theo Thông tư 12/2020/TT-BGTVT.</span>
+                            <span data-i18n="detail_legal_footer">🛡️ Vé điện tử có giá trị tương đương vé giấy truyền thống theo Thông tư 12/2020/TT-BGTVT.</span>
                         </div>
                     </div>
 
@@ -108,8 +108,8 @@
                     <!-- PHẦN CUỐNG VÉ CHECK-IN BẰNG QR -->
                     <div class="ticket-stub-section">
                         <div class="stub-header">
-                            <span class="stub-badge">CHECK-IN BẾN XE</span>
-                            <span class="jwt-badge">Mã QR hợp lệ</span>
+                            <span class="stub-badge" data-i18n="detail_stub_title">CHECK-IN BẾN XE</span>
+                            <span class="jwt-badge" data-i18n="detail_stub_valid">Mã QR hợp lệ</span>
                         </div>
 
                         <div class="qr-code-frame">
@@ -119,12 +119,12 @@
                             }
                             else
                             {
-                                <div class="qr-placeholder">Không có mã QR</div>
+                                <div class="qr-placeholder" data-i18n="detail_stub_no_qr">Không có mã QR</div>
                             }
                         </div>
 
                         <div class="stub-footer">
-                            <span class="qr-hint">Đưa mã QR cho nhân viên bến xe hoặc tài xế quét khi lên xe</span>
+                            <span class="qr-hint" data-i18n="detail_stub_hint">Đưa mã QR cho nhân viên bến xe hoặc tài xế quét khi lên xe</span>
                         </div>
                     </div>
                 </article>

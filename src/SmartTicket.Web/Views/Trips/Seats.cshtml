@@ -77,11 +77,11 @@
                     <div class="auth-gate-banner">
                         <div class="auth-gate-icon">🔒</div>
                         <div>
-                            <strong>Cần đăng nhập để đặt vé</strong>
-                            <p>Vé điện tử sẽ tự động lưu vào Trung tâm tài khoản của bạn sau khi thanh toán.</p>
+                            <strong data-i18n="auth_gate_title">Cần đăng nhập để đặt vé</strong>
+                            <p data-i18n="auth_gate_desc">Vé điện tử sẽ tự động lưu vào Trung tâm tài khoản của bạn sau khi thanh toán.</p>
                             <div class="auth-gate-actions">
-                                <a class="button button-primary" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/trips/@tripId/seats">Đăng nhập</a>
-                                <a class="button button-outline" asp-controller="Account" asp-action="Register" asp-route-returnUrl="/trips/@tripId/seats">Tạo tài khoản</a>
+                                <a class="button button-primary" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/trips/@tripId/seats" data-i18n="auth_gate_login">Đăng nhập</a>
+                                <a class="button button-outline" asp-controller="Account" asp-action="Register" asp-route-returnUrl="/trips/@tripId/seats" data-i18n="auth_gate_register">Tạo tài khoản</a>
                             </div>
                         </div>
                     </div>
@@ -89,8 +89,8 @@
                 else
                 {
                     <div class="auth-user-badge">
-                        <span>✓ Đã đăng nhập: <strong>@User.Identity.Name</strong></span>
-                        <small>Vé sẽ tự động lưu vào <a asp-controller="Account" asp-action="Tickets" target="_blank">Vé của tôi</a></small>
+                        <span><span data-i18n="auth_logged_in_prefix">✓ Đã đăng nhập:</span> <strong>@User.Identity.Name</strong></span>
+                        <small><span data-i18n="auth_saved_to">Vé sẽ tự động lưu vào</span> <a asp-controller="Account" asp-action="Tickets" target="_blank" data-i18n="nav_my_tickets">Vé của tôi</a></small>
                     </div>
                 }
 

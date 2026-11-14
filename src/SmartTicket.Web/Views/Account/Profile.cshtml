@@ -6,13 +6,13 @@
 <div class="profile-page-shell">
     <div class="profile-header-banner">
         <div class="profile-header-content">
-            <span class="eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
-            <h1>Hồ sơ cá nhân & Bảo mật</h1>
-            <p class="muted">Quản lý thông tin liên hệ khi nhận vé điện tử và cập nhật mật khẩu bảo vệ tài khoản.</p>
+            <span class="eyebrow" data-i18n="profile_hero_eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
+            <h1 data-i18n="profile_hero_title">Hồ sơ cá nhân & Bảo mật</h1>
+            <p class="muted" data-i18n="profile_hero_subtitle">Quản lý thông tin liên hệ khi nhận vé điện tử và cập nhật mật khẩu bảo vệ tài khoản.</p>
         </div>
         <div class="profile-quick-nav">
             <a class="button button-primary" asp-controller="Account" asp-action="Tickets">
-                🎟️ Xem vé của tôi →
+                <span data-i18n="profile_btn_view_tickets">🎟️ Xem vé của tôi →</span>
             </a>
         </div>
     </div>
@@ -47,8 +47,8 @@
             <div class="card-header-row">
                 <div class="card-icon-badge">👤</div>
                 <div>
-                    <h2>Thông tin hành khách</h2>
-                    <p class="muted">Tên và số điện thoại này sẽ tự động điền khi bạn đặt vé mới.</p>
+                    <h2 data-i18n="profile_info_card_title">Thông tin hành khách</h2>
+                    <p class="muted" data-i18n="profile_info_card_desc">Tên và số điện thoại này sẽ tự động điền khi bạn đặt vé mới.</p>
                 </div>
             </div>
 
@@ -56,27 +56,27 @@
                 <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
                 <div class="form-group-item">
-                    <label asp-for="FullName">Họ và tên hành khách <span class="text-danger">*</span></label>
-                    <input asp-for="FullName" class="form-control" placeholder="Ví dụ: Đặng Anh Quân" maxlength="160" required />
+                    <label asp-for="FullName"><span data-i18n="profile_label_fullname">Họ và tên hành khách</span> <span class="text-danger">*</span></label>
+                    <input asp-for="FullName" class="form-control" placeholder="Ví dụ: Đặng Anh Quân" data-i18n-placeholder="profile_placeholder_fullname" maxlength="160" required />
                     <span asp-validation-for="FullName" class="field-error"></span>
                 </div>
 
                 <div class="form-group-item">
-                    <label asp-for="PhoneNumber">Số điện thoại liên hệ</label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="Ví dụ: 0345 588 495" maxlength="24" />
+                    <label asp-for="PhoneNumber" data-i18n="profile_label_phone">Số điện thoại liên hệ</label>
+                    <input asp-for="PhoneNumber" class="form-control" placeholder="Ví dụ: 0345 588 495" data-i18n-placeholder="profile_placeholder_phone" maxlength="24" />
                     <span asp-validation-for="PhoneNumber" class="field-error"></span>
                 </div>
 
                 <div class="form-group-item">
-                    <label asp-for="Email">Địa chỉ Email (Định danh tài khoản)</label>
+                    <label asp-for="Email" data-i18n="profile_label_email">Địa chỉ Email (Định danh tài khoản)</label>
                     <div class="input-lock-wrapper">
                         <input asp-for="Email" class="form-control input-readonly" readonly />
-                        <span class="lock-shield" title="Email được cố định làm định danh đăng nhập">🔒 Cố định</span>
+                        <span class="lock-shield" title="Email được cố định làm định danh đăng nhập" data-i18n="profile_email_locked">🔒 Cố định</span>
                     </div>
-                    <small class="form-text text-muted">Email dùng để nhận vé điện tử và đăng nhập, không thể thay đổi trực tiếp.</small>
+                    <small class="form-text text-muted" data-i18n="profile_email_hint">Email dùng để nhận vé điện tử và đăng nhập, không thể thay đổi trực tiếp.</small>
                 </div>
 
-                <button type="submit" class="button button-primary button-wide mt-3">
+                <button type="submit" class="button button-primary button-wide mt-3" data-i18n="profile_btn_save_info">
                     Lưu thay đổi thông tin
                 </button>
             </form>
@@ -87,28 +87,28 @@
             <div class="card-header-row">
                 <div class="card-icon-badge">🔑</div>
                 <div>
-                    <h2>Đổi mật khẩu bảo mật</h2>
-                    <p class="muted">Mật khẩu cần tối thiểu 12 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+                    <h2 data-i18n="profile_pwd_card_title">Đổi mật khẩu bảo mật</h2>
+                    <p class="muted" data-i18n="profile_pwd_card_desc">Mật khẩu cần tối thiểu 12 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
                 </div>
             </div>
 
             <form asp-action="ChangePassword" method="post" class="form-stack">
                 <div class="form-group-item">
-                    <label for="CurrentPassword">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                    <input type="password" id="CurrentPassword" name="CurrentPassword" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu đang dùng" required />
+                    <label for="CurrentPassword"><span data-i18n="profile_label_current_pwd">Mật khẩu hiện tại</span> <span class="text-danger">*</span></label>
+                    <input type="password" id="CurrentPassword" name="CurrentPassword" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu đang dùng" data-i18n-placeholder="profile_placeholder_current_pwd" required />
                 </div>
 
                 <div class="form-group-item">
-                    <label for="NewPassword">Mật khẩu mới <span class="text-danger">*</span></label>
-                    <input type="password" id="NewPassword" name="NewPassword" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự mạnh" minlength="12" required />
+                    <label for="NewPassword"><span data-i18n="profile_label_new_pwd">Mật khẩu mới</span> <span class="text-danger">*</span></label>
+                    <input type="password" id="NewPassword" name="NewPassword" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự mạnh" data-i18n-placeholder="profile_placeholder_new_pwd" minlength="12" required />
                 </div>
 
                 <div class="form-group-item">
-                    <label for="ConfirmPassword">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                    <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới" minlength="12" required />
+                    <label for="ConfirmPassword"><span data-i18n="profile_label_confirm_pwd">Xác nhận mật khẩu mới</span> <span class="text-danger">*</span></label>
+                    <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới" data-i18n-placeholder="profile_placeholder_confirm_pwd" minlength="12" required />
                 </div>
 
-                <button type="submit" class="button button-secondary button-wide mt-3">
+                <button type="submit" class="button button-secondary button-wide mt-3" data-i18n="profile_btn_save_pwd">
                     Cập nhật mật khẩu mới
                 </button>
             </form>

@@ -76,7 +76,7 @@
         </label>
 
         <!-- SWAP BUTTON -->
-        <button type="button" class="search-swap-btn" onclick="swapStations()" title="Hoán đổi bến đi và bến đến" aria-label="Hoán đổi chiều đi">
+        <button type="button" class="search-swap-btn" onclick="swapStations()" title="Hoán đổi bến đi và bến đến" data-i18n-title="swap_tooltip" aria-label="Hoán đổi chiều đi">
             <span class="swap-icon">⇄</span>
         </button>
 
@@ -126,7 +126,7 @@
 
         <div class="section-heading results-header-bar">
             <div>
-                <p class="eyebrow">KẾT QUẢ TÌM CHUYẾN XE</p>
+                <p class="eyebrow" data-i18n="results_eyebrow">KẾT QUẢ TÌM CHUYẾN XE</p>
                 <h2>@depName → @arrName</h2>
                 <p class="results-date-sub">Ngày khởi hành: <strong>@Model.TravelDate.ToString("dd/MM/yyyy")</strong> · Tìm thấy <strong>@Model.Results.Count</strong> chuyến đang mở bán</p>
             </div>
@@ -136,20 +136,20 @@
                 <!-- FILTER & SORT CONTROLS -->
                 <div class="results-controls">
                     <div class="filter-pills" id="vehicleTypeFilterPills">
-                        <button type="button" class="pill-btn active" onclick="filterByVehicleType('all')">Tất cả xe</button>
-                        <button type="button" class="pill-btn" onclick="filterByVehicleType('limousine')">Limousine</button>
-                        <button type="button" class="pill-btn" onclick="filterByVehicleType('giuong')">Giường nằm</button>
-                        <button type="button" class="pill-btn" onclick="filterByVehicleType('ghe')">Ghế ngồi</button>
+                        <button type="button" class="pill-btn active" onclick="filterByVehicleType('all')" data-i18n="filter_all_vehicles">Tất cả xe</button>
+                        <button type="button" class="pill-btn" onclick="filterByVehicleType('limousine')" data-i18n="filter_limousine">Limousine</button>
+                        <button type="button" class="pill-btn" onclick="filterByVehicleType('giuong')" data-i18n="filter_sleeper">Giường nằm</button>
+                        <button type="button" class="pill-btn" onclick="filterByVehicleType('ghe')" data-i18n="filter_seats">Ghế ngồi</button>
                     </div>
 
                     <div class="sort-dropdown-wrap">
-                        <label for="sortTripsSelect">Sắp xếp:</label>
+                        <label for="sortTripsSelect" data-i18n="sort_label">Sắp xếp:</label>
                         <select id="sortTripsSelect" onchange="sortTripCards(this.value)">
-                            <option value="time-asc">Giờ đi sớm nhất</option>
-                            <option value="time-desc">Giờ đi muộn nhất</option>
-                            <option value="price-asc">Giá vé thấp nhất</option>
-                            <option value="price-desc">Giá vé cao nhất</option>
-                            <option value="seats-desc">Nhiều chỗ trống nhất</option>
+                            <option value="time-asc" data-i18n="sort_time_asc">Giờ đi sớm nhất</option>
+                            <option value="time-desc" data-i18n="sort_time_desc">Giờ đi muộn nhất</option>
+                            <option value="price-asc" data-i18n="sort_price_asc">Giá vé thấp nhất</option>
+                            <option value="price-desc" data-i18n="sort_price_desc">Giá vé cao nhất</option>
+                            <option value="seats-desc" data-i18n="sort_seats_desc">Nhiều chỗ trống nhất</option>
                         </select>
                     </div>
                 </div>
@@ -240,20 +240,20 @@
                             </div>
 
                             <div class="price-val-box">
-                                <span class="price-prefix">Giá niêm yết</span>
+                                <span class="price-prefix" data-i18n="fare_prefix">Giá niêm yết</span>
                                 <strong class="fare-bold">@trip.Price.ToString("N0") ₫</strong>
                             </div>
 
                             @if (trip.AvailableSeats > 0)
                             {
                                 <a class="button button-primary choose-seat-btn" href="/trips/@trip.TripId/seats">
-                                    <span>Chọn ghế</span>
+                                    <span data-i18n="btn_pick_seats">Chọn ghế</span>
                                     <b aria-hidden="true">↗</b>
                                 </a>
                             }
                             else
                             {
-                                <button class="button button-outline" disabled style="opacity:0.5; cursor:not-allowed;">
+                                <button class="button button-outline" disabled style="opacity:0.5; cursor:not-allowed;" data-i18n="sold_out_btn">
                                     Hết vé
                                 </button>
                             }
