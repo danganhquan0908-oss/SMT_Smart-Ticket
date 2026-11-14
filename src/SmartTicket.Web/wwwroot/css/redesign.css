@@ -551,8 +551,10 @@ button, input, select, textarea {
 }
 
 .login-link span {
-    font-size: 14px;
+    font-size: 13.5px;
     line-height: 1;
+    color: inherit !important;
+    font-weight: 850 !important;
 }
 
 .logout-button {
@@ -785,7 +787,9 @@ button, input, select, textarea {
 [data-theme="dark"] .btn-modal-checkout,
 :root:not([data-theme="light"]) .btn-modal-checkout,
 [data-theme="dark"] .login-link,
-:root:not([data-theme="light"]) .login-link {
+:root:not([data-theme="light"]) .login-link,
+[data-theme="dark"] .login-link span,
+:root:not([data-theme="light"]) .login-link span {
     color: #120c06 !important;
     text-shadow: none !important;
 }
@@ -798,9 +802,15 @@ button, input, select, textarea {
 [data-theme="light"] .button-pay-submit,
 [data-theme="light"] .btn-modal-checkout,
 [data-theme="light"] .button-deep-app,
-[data-theme="light"] .login-link {
+[data-theme="light"] .login-link,
+[data-theme="light"] .login-link span {
     color: #ffffff !important;
     text-shadow: none !important;
+}
+
+.login-link:hover,
+.login-link:hover span {
+    color: inherit !important;
 }
 
 .button-primary:hover, 
