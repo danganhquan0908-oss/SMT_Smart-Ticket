@@ -1,123 +1,173 @@
-@model BusGoSmartTicket.Models.ViewModels.CustomerProfileViewModel
+@model BusGoSmartTicket.Models.ViewModels.AccountSettingsViewModel
 @{
-    ViewData["Title"] = "Hồ sơ cá nhân & Bảo mật - Smart Ticket";
+    ViewData["Title"] = "Tài khoản cá nhân";
+    var profileUrl = Url.Action("Profile", "Account");
+    var hasErrors = !ViewData.ModelState.IsValid;
 }
 
-<div class="profile-page-shell">
-    <div class="profile-header-banner">
-        <div class="profile-header-content">
-            <span class="eyebrow">TRUNG TÂM TÀI KHOẢN HÀNH KHÁCH</span>
-            <h1>Hồ sơ cá nhân & Bảo mật</h1>
-            <p class="muted">Quản lý thông tin liên hệ khi nhận vé điện tử và cập nhật mật khẩu bảo vệ tài khoản.</p>
+<section id="account-page" class="account-center" data-active-section="@Model.ActiveSection" data-has-errors="@hasErrors.ToString().ToLowerInvariant()" data-profile-url="@profileUrl">
+    <header class="account-center-header">
+        <div>
+            <h1>Tài khoản cá nhân</h1>
+            <p>Thông tin của bạn, sẵn sàng cho mỗi hành trình.</p>
         </div>
-        <div class="profile-quick-nav">
-            <a class="button button-primary" asp-controller="Account" asp-action="Tickets">
-                🎟️ Xem vé của tôi →
-            </a>
-        </div>
-    </div>
+        <a class="button button-outline account-workspace-link" href="@Model.WorkspaceUrl">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6M8 12h12"/></svg>
+            <span>@Model.WorkspaceLabel</span>
+        </a>
+    </header>
 
-    @if (TempData["ProfileSuccess"] != null)
+    @if (TempData["ProfileSuccess"] is string profileSuccess)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>✓ Thành công!</strong> @TempData["ProfileSuccess"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="account-feedback account-feedback-success" role="status"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><span>@profileSuccess</span></div>
+    }
+    @if (TempData["PasswordSuccess"] is string passwordSuccess)
+    {
+        <div class="account-feedback account-feedback-success" role="status"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg><span>@passwordSuccess</span></div>
     }
 
-    @if (TempData["PasswordSuccess"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>✓ Thành công!</strong> @TempData["PasswordSuccess"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (TempData["PasswordError"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>⚠️ Lỗi:</strong> @TempData["PasswordError"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    <div class="profile-grid">
-        <!-- CỘT 1: THÔNG TIN CÁ NHÂN -->
-        <div class="profile-card">
-            <div class="card-header-row">
-                <div class="card-icon-badge">👤</div>
-                <div>
-                    <h2>Thông tin hành khách</h2>
-                    <p class="muted">Tên và số điện thoại này sẽ tự động điền khi bạn đặt vé mới.</p>
+    <div class="account-center-layout">
+        <aside class="account-sidebar" aria-label="Tóm tắt tài khoản">
+            <div class="account-identity">
+                <div class="account-monogram" aria-hidden="true" translate="no">@Model.Initials</div>
+                <div class="account-identity-copy">
+                    <strong translate="no">@Model.DisplayName</strong>
+                    <span translate="no">@Model.Email</span>
                 </div>
             </div>
+            <div class="account-role-list">
+                @foreach (var role in Model.RoleLabels)
+                {
+                    <span class="account-role">@role</span>
+                }
+            </div>
 
-            <form asp-action="Profile" method="post" class="form-stack">
-                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <nav class="account-section-nav" aria-label="Quản lý tài khoản">
+                <a href="@profileUrl?section=profile#account-profile-panel" data-account-section="profile" aria-current="@(Model.ActiveSection == "profile" ? "location" : null)">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+                    <span>Thông tin cá nhân</span>
+                </a>
+                <a href="@profileUrl?section=security#account-security-panel" data-account-section="security" aria-current="@(Model.ActiveSection == "security" ? "location" : null)">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                    <span>Mật khẩu và bảo mật</span>
+                </a>
+                <a href="@profileUrl?section=preferences#account-preferences-panel" data-account-section="preferences" aria-current="@(Model.ActiveSection == "preferences" ? "location" : null)">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg>
+                    <span>Giao diện và ngôn ngữ</span>
+                </a>
+            </nav>
 
-                <div class="form-group-item">
-                    <label asp-for="FullName">Họ và tên hành khách <span class="text-danger">*</span></label>
-                    <input asp-for="FullName" class="form-control" placeholder="Ví dụ: Đặng Anh Quân" maxlength="160" required />
-                    <span asp-validation-for="FullName" class="field-error"></span>
+            <dl class="account-registration">
+                <div><dt>Tham gia từ</dt><dd><time datetime="@Model.CreatedAtUtc.ToString("O")">@Model.CreatedAtUtc.AddHours(7).ToString("dd/MM/yyyy")</time></dd></div>
+            </dl>
+            @if (Model.IsCustomer)
+            {
+                <div class="account-shortcuts">
+                    <a asp-controller="Account" asp-action="Tickets">Vé của tôi<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+                    <a asp-controller="Membership" asp-action="Index">Hội viên và ưu đãi<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
                 </div>
+            }
+        </aside>
 
-                <div class="form-group-item">
-                    <label asp-for="PhoneNumber">Số điện thoại liên hệ</label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="Ví dụ: 0345 588 495" maxlength="24" />
-                    <span asp-validation-for="PhoneNumber" class="field-error"></span>
-                </div>
-
-                <div class="form-group-item">
-                    <label asp-for="Email">Địa chỉ Email (Định danh tài khoản)</label>
-                    <div class="input-lock-wrapper">
-                        <input asp-for="Email" class="form-control input-readonly" readonly />
-                        <span class="lock-shield" title="Email được cố định làm định danh đăng nhập">🔒 Cố định</span>
+        <div class="account-panels">
+            <section id="account-profile-panel" class="account-panel" data-account-panel="profile" aria-labelledby="account-profile-heading" tabindex="-1">
+                <div class="account-panel-heading"><h2 id="account-profile-heading">Thông tin cá nhân</h2><p>Giữ thông tin liên hệ chính xác để thuận tiện khi đặt vé và lên xe.</p></div>
+                <form asp-controller="Account" asp-action="Profile" method="post" id="account-profile-form" class="account-form">
+                    @if (Model.ActiveSection == "profile")
+                    {
+                        @Html.ValidationSummary(true, "", new { @class = "account-validation", role = "alert" })
+                    }
+                    <div class="account-field">
+                        <label for="FullName">Họ và tên <span aria-hidden="true">*</span></label>
+                        <input id="FullName" name="FullName" type="text" value="@Model.Profile.FullName" autocomplete="name" maxlength="160" required aria-describedby="FullName-error" />
+                        @Html.ValidationMessage("FullName", "", new { @class = "account-field-error", id = "FullName-error" })
                     </div>
-                    <small class="form-text text-muted">Email dùng để nhận vé điện tử và đăng nhập, không thể thay đổi trực tiếp.</small>
+                    <div class="account-field">
+                        <label for="PhoneNumber">Số điện thoại liên hệ</label>
+                        <input id="PhoneNumber" name="PhoneNumber" type="tel" value="@Model.Profile.PhoneNumber" autocomplete="tel" maxlength="24" placeholder="Nhập số điện thoại" aria-describedby="PhoneNumber-help PhoneNumber-error" />
+                        <small id="PhoneNumber-help">Tên và số điện thoại được điền sẵn khi bạn đặt vé.</small>
+                        @Html.ValidationMessage("PhoneNumber", "", new { @class = "account-field-error", id = "PhoneNumber-error" })
+                    </div>
+                    <div class="account-field">
+                        <label for="AccountEmail">Email đăng nhập</label>
+                        <div class="account-readonly-input"><input id="AccountEmail" type="email" value="@Model.Email" readonly autocomplete="email" aria-describedby="AccountEmail-help" /><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+                        <small id="AccountEmail-help">Email là định danh đăng nhập và không thể thay đổi tại đây.</small>
+                    </div>
+                    <div class="account-form-footer"><button class="button button-primary" type="submit">Lưu thông tin</button><span>Các trường có dấu * là bắt buộc.</span></div>
+                </form>
+            </section>
+
+            <section id="account-security-panel" class="account-panel" data-account-panel="security" aria-labelledby="account-security-heading" tabindex="-1">
+                <div class="account-panel-heading"><h2 id="account-security-heading">Mật khẩu và bảo mật</h2><p>Dùng mật khẩu riêng cho tài khoản BusGo của bạn.</p></div>
+                <div class="account-security-state">
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                    <div><strong>Xác thực hai lớp</strong><p>@(Model.TwoFactorEnabled ? "Bạn sẽ nhập mã từ ứng dụng xác thực khi đăng nhập." : "Giữ mật khẩu riêng và không chia sẻ thông tin đăng nhập.")</p></div>
+                    <span class="account-security-label">@(Model.TwoFactorEnabled ? "Đang bật" : "Chưa bật")</span>
                 </div>
+                @if (Model.HasPassword)
+                {
+                    <form asp-controller="Account" asp-action="ChangePassword" method="post" id="account-password-form" class="account-form">
+                        @if (Model.ActiveSection == "security")
+                        {
+                            @Html.ValidationSummary(true, "", new { @class = "account-validation", role = "alert" })
+                        }
+                        <div class="account-field">
+                            <label for="CurrentPassword">Mật khẩu hiện tại <span aria-hidden="true">*</span></label>
+                            <div class="account-password-input"><input id="CurrentPassword" name="CurrentPassword" type="password" autocomplete="current-password" maxlength="100" required aria-describedby="CurrentPassword-error" /><button type="button" class="account-password-toggle" data-password-toggle="CurrentPassword" aria-label="Hiện mật khẩu" aria-pressed="false" aria-controls="CurrentPassword"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="account-eye-slash" d="M3 3l18 18"/></svg></button></div>
+                            @Html.ValidationMessage("CurrentPassword", "", new { @class = "account-field-error", id = "CurrentPassword-error" })
+                        </div>
+                        <div class="account-field">
+                            <label for="NewPassword">Mật khẩu mới <span aria-hidden="true">*</span></label>
+                            <div class="account-password-input"><input id="NewPassword" name="NewPassword" type="password" autocomplete="new-password" minlength="12" maxlength="100" required aria-describedby="account-password-rules NewPassword-error" /><button type="button" class="account-password-toggle" data-password-toggle="NewPassword" aria-label="Hiện mật khẩu" aria-pressed="false" aria-controls="NewPassword"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="account-eye-slash" d="M3 3l18 18"/></svg></button></div>
+                            @Html.ValidationMessage("NewPassword", "", new { @class = "account-field-error", id = "NewPassword-error" })
+                            <ul id="account-password-rules" class="account-password-rules" aria-label="Yêu cầu mật khẩu mới">
+                                <li data-password-rule="length"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m3 8 3 3 7-7"/></svg><span>Từ 12 đến 100 ký tự</span></li>
+                                <li data-password-rule="case"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m3 8 3 3 7-7"/></svg><span>Có chữ hoa và chữ thường</span></li>
+                                <li data-password-rule="number"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m3 8 3 3 7-7"/></svg><span>Có ít nhất một chữ số</span></li>
+                                <li data-password-rule="symbol"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="m3 8 3 3 7-7"/></svg><span>Có ký tự đặc biệt</span></li>
+                            </ul>
+                        </div>
+                        <div class="account-field">
+                            <label for="ConfirmPassword">Xác nhận mật khẩu mới <span aria-hidden="true">*</span></label>
+                            <div class="account-password-input"><input id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="100" required aria-describedby="ConfirmPassword-error" /><button type="button" class="account-password-toggle" data-password-toggle="ConfirmPassword" aria-label="Hiện mật khẩu" aria-pressed="false" aria-controls="ConfirmPassword"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="account-eye-slash" d="M3 3l18 18"/></svg></button></div>
+                            @Html.ValidationMessage("ConfirmPassword", "", new { @class = "account-field-error", id = "ConfirmPassword-error" })
+                        </div>
+                        <div class="account-form-footer"><button class="button button-primary" type="submit">Đổi mật khẩu</button><span>Không chia sẻ mật khẩu với người khác.</span></div>
+                    </form>
+                }
+                else
+                {
+                    <p class="account-note">Tài khoản này chưa có mật khẩu đăng nhập. Liên hệ bộ phận hỗ trợ để được hướng dẫn.</p>
+                }
+            </section>
 
-                <button type="submit" class="button button-primary button-wide mt-3">
-                    Lưu thay đổi thông tin
-                </button>
-            </form>
-        </div>
-
-        <!-- CỘT 2: ĐỔI MẬT KHẨU -->
-        <div class="profile-card">
-            <div class="card-header-row">
-                <div class="card-icon-badge">🔑</div>
-                <div>
-                    <h2>Đổi mật khẩu bảo mật</h2>
-                    <p class="muted">Mật khẩu cần tối thiểu 12 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
-                </div>
-            </div>
-
-            <form asp-action="ChangePassword" method="post" class="form-stack">
-                <div class="form-group-item">
-                    <label for="CurrentPassword">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                    <input type="password" id="CurrentPassword" name="CurrentPassword" class="form-control" autocomplete="current-password" placeholder="Nhập mật khẩu đang dùng" required />
-                </div>
-
-                <div class="form-group-item">
-                    <label for="NewPassword">Mật khẩu mới <span class="text-danger">*</span></label>
-                    <input type="password" id="NewPassword" name="NewPassword" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 12 ký tự mạnh" minlength="12" required />
-                </div>
-
-                <div class="form-group-item">
-                    <label for="ConfirmPassword">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                    <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới" minlength="12" required />
-                </div>
-
-                <button type="submit" class="button button-secondary button-wide mt-3">
-                    Cập nhật mật khẩu mới
-                </button>
-            </form>
+            <section id="account-preferences-panel" class="account-panel" data-account-panel="preferences" aria-labelledby="account-preferences-heading" tabindex="-1">
+                <div class="account-panel-heading"><h2 id="account-preferences-heading">Giao diện và ngôn ngữ</h2><p>Tùy chỉnh cách BusGo hiển thị trên trình duyệt này.</p></div>
+                <fieldset class="account-preference-group" data-preference-control disabled>
+                    <legend>Ngôn ngữ hiển thị</legend>
+                    <div class="account-language-options">
+                        <label class="account-choice"><input type="radio" name="account-language" value="vi" /><span lang="vi" translate="no">Tiếng Việt</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></label>
+                        <label class="account-choice"><input type="radio" name="account-language" value="en" /><span lang="en" translate="no">English</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></label>
+                    </div>
+                </fieldset>
+                <fieldset class="account-preference-group" data-preference-control disabled>
+                    <legend>Giao diện</legend>
+                    <div class="account-theme-options">
+                        <label class="account-theme-choice"><input type="radio" name="account-theme" value="light" /><span class="account-theme-preview account-theme-preview-light" aria-hidden="true"><i></i><b></b><em></em></span><span class="account-theme-caption"><span>Sáng</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></span></label>
+                        <label class="account-theme-choice"><input type="radio" name="account-theme" value="dark" /><span class="account-theme-preview account-theme-preview-dark" aria-hidden="true"><i></i><b></b><em></em></span><span class="account-theme-caption"><span>Tối</span><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m4 10 4 4 8-8"/></svg></span></label>
+                    </div>
+                </fieldset>
+                <p class="account-preference-note">Tùy chọn được lưu tự động trên trình duyệt này.</p>
+                <p id="account-preference-status" class="account-preference-status" role="status" aria-live="polite"></p>
+                <noscript><p class="account-note">Bật JavaScript để thay đổi giao diện và ngôn ngữ.</p></noscript>
+            </section>
         </div>
     </div>
-</div>
-
-
+</section>
 
 @section Styles {
     <link rel="stylesheet" href="~/css/pages/account-profile.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/pages/account-profile.js" asp-append-version="true"></script>
 }

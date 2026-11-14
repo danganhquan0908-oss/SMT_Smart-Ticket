@@ -21,6 +21,12 @@ Script tạo PostgreSQL riêng tại `.local/pgdata`, cổng 55432. Khóa và c�
 
 Ngôn ngữ và giao diện được lưu trên trình duyệt. `localization.js` xử lý văn bản và thuộc tính hỗ trợ truy cập; danh mục tiếng Anh nằm trong `translations.en.js`. `appearance.js` cung cấp chuyển màu dạng vòng tròn và tôn trọng tùy chọn giảm chuyển động. Kích thước nút dùng chung ở cả hai giao diện trong `interaction.css`.
 
+## Tài khoản cá nhân
+
+Sau khi đăng nhập, chọn **Tài khoản** trên thanh đầu trang hoặc mở `/account/profile`. Trang hỗ trợ cập nhật họ tên, số điện thoại, đổi mật khẩu và xem vai trò, ngày tạo tài khoản, trạng thái xác thực hai lớp. Email đăng nhập được giữ cố định; việc thay đổi thông tin không thay đổi quyền truy cập.
+
+Mục **Tùy chọn giao diện** đổi ngôn ngữ VI/EN và giao diện sáng/tối ngay trên trang. Các lựa chọn được lưu riêng trong trình duyệt đang dùng. Mật khẩu chỉ được xử lý khi gửi biểu mẫu và không được lưu lại trên trang khi có lỗi.
+
 ## Cấu hình vận hành
 
 Build bằng `dotnet build BusGoSmartTicket.sln`. Cơ sở dữ liệu mới tạo bảng và quản trị viên theo `Admin:Email` / `Admin:Password`. Hành khách tự đăng ký; nhà xe gửi hồ sơ để quản trị viên phê duyệt. Thông tin đăng nhập không được lưu trong kho mã. Khi chạy local, xem cấu hình quản trị riêng tại `.local/development.json`.

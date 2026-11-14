@@ -1,0 +1,26 @@
+.account-settings-link {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    gap:8px;
+    min-height:40px;
+    padding:8px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--white);
+    color:var(--ink);
+    font-size:12px;
+    font-weight:750;
+    white-space:nowrap;
+    text-decoration:none;
+    transition:background-color .18s ease,color .18s ease,border-color .18s ease;
+}
+.account-settings-link svg { width:18px; height:18px; }
+.account-settings-link:hover,.account-settings-link[aria-current="page"] {
+    border-color:var(--gold);
+    background:var(--soft);
+    color:var(--ink);
+}
+.account-settings-link:focus-visible { outline:3px solid var(--gold); outline-offset:3px; }
+@media (prefers-reduced-motion:reduce) { .account-settings-link { transition:none; } }
